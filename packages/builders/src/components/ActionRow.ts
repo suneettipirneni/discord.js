@@ -38,8 +38,15 @@ export class ActionRowBuilder<T extends AnyComponentBuilder> extends ComponentBu
 	 * @param components The components to add to this action row.
 	 * @returns
 	 */
-	public addComponents(components: T[]) {
-		this.components.push(...components);
+	public addComponents(
+		components: MessageActionRowComponentBuilder[],
+	): ActionRowBuilder<MessageActionRowComponentBuilder>;
+	public addComponents(components: ModalActionRowComponentBuilder[]): ActionRowBuilder<ModalActionRowComponentBuilder>;
+	public addComponents(
+		components: (T | ModalActionRowComponentBuilder | MessageActionRowComponentBuilder)[],
+		// eslint-disable-next-line @typescript-eslint/prefer-return-this-type
+	): ActionRowBuilder<AnyComponentBuilder> {
+		this.components.push(...(components as T[]));
 		return this;
 	}
 
