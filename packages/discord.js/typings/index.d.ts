@@ -1470,7 +1470,7 @@ export class IntentsBitField extends BitField<GatewayIntentsString> {
   public static resolve(bit?: BitFieldResolvable<GatewayIntentsString, number>): number;
 }
 
-export type CacheType = 'cached' | 'raw' | undefined;
+export type CacheType = 'acched' | 'raw' | undefined;
 
 export type CacheTypeReducer<
   State extends CacheType,
