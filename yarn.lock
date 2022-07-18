@@ -2121,6 +2121,30 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@discordjs/rpc@workspace:packages/rpc":
+  version: 0.0.0-use.local
+  resolution: "@discordjs/rpc@workspace:packages/rpc"
+  dependencies:
+    "@discordjs/collection": "workspace:^"
+    "@discordjs/docgen": "workspace:^"
+    "@discordjs/scripts": "workspace:^"
+    "@favware/cliff-jumper": ^1.8.5
+    "@microsoft/api-extractor": ^7.28.3
+    "@sapphire/async-queue": ^1.3.2
+    "@sapphire/snowflake": ^3.2.2
+    c8: ^7.11.3
+    discord-api-types: ^0.36.1
+    discord.js: "workspace:^"
+    eslint: ^8.19.0
+    prettier: ^2.7.1
+    tslib: ^2.4.0
+    tsup: ^6.1.3
+    typescript: ^4.7.4
+    undici: ^5.7.0
+    vitest: ^0.17.0
+  languageName: unknown
+  linkType: soft
+
 "@discordjs/scripts@workspace:^, @discordjs/scripts@workspace:packages/scripts":
   version: 0.0.0-use.local
   resolution: "@discordjs/scripts@workspace:packages/scripts"
@@ -7071,7 +7095,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"discord.js@workspace:packages/discord.js":
+"discord.js@workspace:^, discord.js@workspace:packages/discord.js":
   version: 0.0.0-use.local
   resolution: "discord.js@workspace:packages/discord.js"
   dependencies:
@@ -17375,6 +17399,13 @@ __metadata:
   version: 5.10.0
   resolution: "undici@npm:5.10.0"
   checksum: 7ba2b71dccc74cd2bdf645b83e9aaef374ae04855943d0a2f42a3d0b9e5556f37cc9b5156fb5288277a2fa95fd46a56f3ae0d5cf73db3f008d75ec41104b136c
+  languageName: node
+  linkType: hard
+
+"undici@npm:^5.7.0":
+  version: 5.7.0
+  resolution: "undici@npm:5.7.0"
+  checksum: 3a8133697ee7124f4998c01dcb2255206a85bdf99cc75e97d2535d752bc853a9b39e149e7292479c6c170602947c7c77403081ced10ffbffcbe9fb077e40c6fb
   languageName: node
   linkType: hard
 
