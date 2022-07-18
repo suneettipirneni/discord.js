@@ -1,52 +1,18 @@
-import { EventEmitter } from 'node:events';
+import EventEmitter from 'events';
 import { setTimeout, clearTimeout } from 'timers';
-import { APIUser, OAuth2Scopes, RESTPostOAuth2ClientCredentialsResult, Routes, Snowflake } from 'discord-api-types/v10';
+import type { ClientApplication, User } from 'discord.js';
 import { fetch } from 'undici';
-import { LobbyTypes, RelationShip, RelationshipTypes } from './constants';
-import { transports } from './transports';
-import {
-	AuthenticateResponseData,
-	AuthorizeResponseData,
-	GetChannelResponseData,
-	GetChannelsResponseData,
-	GetGuildResponseData,
-	GetGuildsResponseData,
-	GetVoiceSettingsResponseData,
-	MappedRPCCommandsArguments,
-	RESTPostOAuth2RPCClientCredentialsResult,
-	RPCArguments,
-	RPCCommand,
-	RPCEvent,
-	RPCOAuthApplication,
-	SelectTextChannelArguments,
-	SelectVoiceChannelArguments,
-	SetActivityArguments,
-	SetCertifiedDevicesArguments,
-	SetUserVoiceSettingsData,
-} from './transports/types';
+import { RPCCommands, RPCEvents, RelationshipTypes } from './constants';
+import transports from './transports';
 import { pid as getPid, uuid } from './util';
 
-// TODO: lots of errors and (maybe) unneeded functions to take care of
-
-function subKey(event: string, args?: unknown[]) {
+function subKey(event: string, args: any[]) {
 	return `${event}${JSON.stringify(args)}`;
 }
 
-type Class<T extends new (...args: any[]) => unknown> = T extends new (...args: any[]) => infer R ? R : never;
-
 export interface RPCClientOptions {
-	transport?: keyof typeof transports;
+	transport?: 'ipc' | 'websocket';
 	origin?: string;
-}
-
-export interface RPCLoginOptions {
-	clientId: string;
-	clientSecret: string;
-	accessToken: string;
-	rpcToken: string;
-	tokenEndpoint: string;
-	scopes: OAuth2Scopes[];
-	username: string;
 }
 
 /**
@@ -63,19 +29,8 @@ export class RPCClient extends EventEmitter {
 	public readonly options: RPCClientOptions;
 	private accessToken: string | null;
 	public clientId: string | null;
-	public application: RPCOAuthApplication | null;
-	public user: Partial<APIUser> | null;
-	private readonly fetch: (
-		method: string,
-		path: string,
-		options?: { data: URLSearchParams; query?: Record<string, string> },
-	) => Promise<unknown>;
-
-	private endpoint = 'https://discord.com/api';
-	private readonly transport: Class<typeof transports[keyof typeof transports]>;
-	private readonly _expecting: Map<string, { resolve: (value: unknown) => void; reject: (reason?: Error) => void }>;
-	private _connectPromise: Promise<unknown> | undefined;
-	private readonly _subscriptions: Map<string, ({ shortcut }: { shortcut: string }) => void>;
+	private application: ClientApplication | null;
+	private user: User | null;
 
 	/**
 	 * @param {RPCClientOptions} [options] Options for the client.
@@ -97,31 +52,33 @@ export class RPCClient extends EventEmitter {
 
 		/**
 		 * User used in this application
-		 * @type {?Partial<APIUser>}
+		 * @type {?User}
 		 */
 		this.user = null;
 
-		const Transport = options.transport ? transports[options.transport] : false;
+		const Transport = transports[options.transport];
 		if (!Transport) {
-			throw new TypeError('RPC_INVALID_TRANSPORT', options.transport as undefined);
+			throw new TypeError('RPC_INVALID_TRANSPORT', options.transport);
 		}
 
-		this.fetch = (method, path, options) =>
-			fetch(`${this.endpoint}${path}${options?.query ? new URLSearchParams(options.query).toString() : ''}`, {
+		this.fetch = (method, path, { data, query } = {}) =>
+			fetch(`${this.fetch.endpoint}${path}${query ? new URLSearchParams(query) : ''}`, {
 				method,
-				body: options?.data.toString() as string | null,
+				body: data,
 				headers: {
-					Authorization: `Bearer ${this.accessToken!}`,
+					Authorization: `Bearer ${this.accessToken}`,
 				},
 			}).then(async (r) => {
 				const body = await r.json();
 				if (!r.ok) {
-					const e = new Error(r.status.toString()) as Error & { body: unknown };
+					const e = new Error(r.status);
 					e.body = body;
 					throw e;
 				}
 				return body;
 			});
+
+		this.fetch.endpoint = 'https://discord.com/api';
 
 		/**
 		 * Raw transport userd
@@ -139,26 +96,12 @@ export class RPCClient extends EventEmitter {
 		this._expecting = new Map();
 
 		this._connectPromise = undefined;
-
-		/**
-		 * Map of subscriptions
-		 * @type {Map}
-		 * @private
-		 */
-		this._subscriptions = new Map();
-	}
-
-	/**
-	 * Update endpoint
-	 */
-	public updateEndpoint(endpoint: string) {
-		this.endpoint = endpoint;
 	}
 
 	/**
 	 * Search and connect to RPC
 	 */
-	public connect(clientId: string) {
+	public connect(clientId) {
 		if (this._connectPromise) {
 			return this._connectPromise;
 		}
@@ -177,11 +120,7 @@ export class RPCClient extends EventEmitter {
 				this.emit('disconnected');
 				reject(new Error('connection closed'));
 			});
-			try {
-				void this.transport.connect();
-			} catch (e) {
-				reject(e);
-			}
+			this.transport.connect().catch(reject);
 		});
 		return this._connectPromise;
 	}
@@ -193,7 +132,7 @@ export class RPCClient extends EventEmitter {
 	 * @param {string} [accessToken] Access token
 	 * @param {string} [rpcToken] RPC token
 	 * @param {string} [tokenEndpoint] Token endpoint
-	 * @param {OAuth2Scopes[]} [scopes] Scopes to authorize with
+	 * @param {string[]} [scopes] Scopes to authorize with
 	 */
 
 	/**
@@ -203,16 +142,17 @@ export class RPCClient extends EventEmitter {
 	 * @example client.login({ clientId: '1234567', clientSecret: 'abcdef123' });
 	 * @returns {Promise<RPCClient>}
 	 */
-	public async login(options?: RPCLoginOptions): Promise<RPCClient> {
-		await this.connect(options?.clientId ?? '');
-		if (!options?.scopes) {
+	public async login(options = {}) {
+		let { clientId, accessToken } = options;
+		await this.connect(clientId);
+		if (!options.scopes) {
 			this.emit('ready');
 			return this;
 		}
-		if (!options.accessToken) {
-			options.accessToken = await this.authorize(options);
+		if (!accessToken) {
+			accessToken = await this.authorize(options);
 		}
-		return this.authenticate(options.accessToken);
+		return this.authenticate(accessToken);
 	}
 
 	/**
@@ -223,14 +163,9 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 * @private
 	 */
-	public request<T extends RPCCommand = RPCCommand>(
-		cmd: T,
-		args?: MappedRPCCommandsArguments[T],
-		event?: RPCEvent,
-	): Promise<unknown> {
+	public request(cmd, args, evt) {
 		return new Promise((resolve, reject) => {
 			const nonce = uuid();
-			const evt = event!;
 			this.transport.send({ cmd, args, evt, nonce });
 			this._expecting.set(nonce, { resolve, reject });
 		});
@@ -241,17 +176,17 @@ export class RPCClient extends EventEmitter {
 	 * @param {Object} message message
 	 * @private
 	 */
-	private _onRpcMessage(message: { cmd: RPCCommand; evt: string; data: Record<string, unknown>; nonce: string }) {
-		if (message.cmd === RPCCommand.Dispatch && message.evt === RPCEvent.Ready) {
+	private _onRpcMessage(message) {
+		if (message.cmd === RPCCommands.DISPATCH && message.evt === RPCEvents.READY) {
 			if (message.data.user) {
-				this.user = message.data.user as Partial<APIUser>;
+				this.user = message.data.user;
 			}
 			this.emit('connected');
 		} else if (this._expecting.has(message.nonce)) {
-			const { resolve, reject } = this._expecting.get(message.nonce)!;
+			const { resolve, reject } = this._expecting.get(message.nonce);
 			if (message.evt === 'ERROR') {
-				const e = new Error(message.data.message as string) as Error & { code: string; data: Record<string, unknown> };
-				e.code = message.data.code as string;
+				const e = new Error(message.data.message);
+				e.code = message.data.code;
 				e.data = message.data;
 				reject(e);
 			} else {
@@ -269,45 +204,33 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 * @private
 	 */
-	public async authorize({
-		scopes,
-		clientSecret,
-		rpcToken,
-		username,
-		redirectUri,
-	}: {
-		scopes: OAuth2Scopes[];
-		clientSecret: string;
-		rpcToken: string | boolean;
-		username: string;
-		redirectUri?: string;
-	}): Promise<string> {
+	public async authorize({ scopes, clientSecret, rpcToken, redirectUri, prompt } = {}) {
 		if (clientSecret && rpcToken === true) {
-			const body = (await this.fetch('POST', `${Routes.oauth2TokenExchange()}/rpc`, {
+			const body = await this.fetch('POST', '/oauth2/token/rpc', {
 				data: new URLSearchParams({
-					client_id: this.clientId!,
+					client_id: this.clientId,
 					client_secret: clientSecret,
 				}),
-			})) as RESTPostOAuth2RPCClientCredentialsResult;
+			});
 			rpcToken = body.rpc_token;
 		}
 
-		const { code } = (await this.request(RPCCommand.Authorize, {
+		const { code } = await this.request('AUTHORIZE', {
 			scopes,
-			client_id: this.clientId!,
-			rpc_token: rpcToken as string,
-			username,
-		})) as AuthorizeResponseData;
+			client_id: this.clientId,
+			prompt,
+			rpc_token: rpcToken,
+		});
 
-		const response = (await this.fetch('POST', Routes.oauth2TokenExchange(), {
+		const response = await this.fetch('POST', '/oauth2/token', {
 			data: new URLSearchParams({
-				client_id: this.clientId!,
+				client_id: this.clientId,
 				client_secret: clientSecret,
 				code,
 				grant_type: 'authorization_code',
-				redirect_uri: redirectUri!,
+				redirect_uri: redirectUri,
 			}),
-		})) as RESTPostOAuth2ClientCredentialsResult;
+		});
 
 		return response.access_token;
 	}
@@ -318,10 +241,8 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 * @private
 	 */
-	public authenticate(accessToken: string): Promise<RPCClient> {
-		return (
-			this.request(RPCCommand.Authenticate, { access_token: accessToken }) as Promise<AuthenticateResponseData>
-		).then(({ application, user }) => {
+	public authenticate(accessToken) {
+		return this.request('AUTHENTICATE', { access_token: accessToken }).then(({ application, user }) => {
 			this.accessToken = accessToken;
 			this.application = application;
 			this.user = user;
@@ -333,38 +254,43 @@ export class RPCClient extends EventEmitter {
 	/**
 	 * Fetch a guild
 	 * @param {Snowflake} id Guild ID
-	 * @returns {Promise<GetGuildResponseData>}
+	 * @param {number} [timeout] Timeout request
+	 * @returns {Promise<Guild>}
 	 */
-	public getGuild(id: Snowflake): Promise<GetGuildResponseData> {
-		return this.request(RPCCommand.GetGuild, { guild_id: id }) as Promise<GetGuildResponseData>;
+	public getGuild(id, timeout) {
+		return this.request(RPCCommands.GET_GUILD, { guild_id: id, timeout });
 	}
 
 	/**
 	 * Fetch all guilds
-	 * @returns {Promise<GetGuildsResponseData['guilds']>}
+	 * @param {number} [timeout] Timeout request
+	 * @returns {Promise<Collection<Snowflake, Guild>>}
 	 */
-	public getGuilds(): Promise<GetGuildsResponseData['guilds']> {
-		return this.request(RPCCommand.GetGuilds) as Promise<GetGuildsResponseData['guilds']>;
+	public getGuilds(timeout) {
+		return this.request(RPCCommands.GET_GUILDS, { timeout });
 	}
 
 	/**
 	 * Get a channel
 	 * @param {Snowflake} id Channel ID
-	 * @returns {Promise<GetChannelResponseData>}
+	 * @param {number} [timeout] Timeout request
+	 * @returns {Promise<Channel>}
 	 */
-	public getChannel(id: Snowflake): Promise<GetChannelResponseData> {
-		return this.request(RPCCommand.GetChannel, { channel_id: id }) as Promise<GetChannelResponseData>;
+	public getChannel(id, timeout) {
+		return this.request(RPCCommands.GET_CHANNEL, { channel_id: id, timeout });
 	}
 
 	/**
 	 * Get all channels
 	 * @param {Snowflake} [id] Guild ID
-	 * @returns {Promise<GetChannelsResponseData['channels']>}
+	 * @param {number} [timeout] Timeout request
+	 * @returns {Promise<Collection<Snowflake, Channel>>}
 	 */
-	public async getChannels(id: Snowflake): Promise<GetChannelsResponseData['channels']> {
-		const { channels } = (await this.request(RPCCommand.GetChannels, {
+	public async getChannels(id, timeout) {
+		const { channels } = await this.request(RPCCommands.GET_CHANNELS, {
+			timeout,
 			guild_id: id,
-		})) as GetChannelsResponseData;
+		});
 		return channels;
 	}
 
@@ -390,8 +316,20 @@ export class RPCClient extends EventEmitter {
 	 * @param {CertifiedDevice[]} devices Certified devices to send to discord
 	 * @returns {Promise}
 	 */
-	public setCertifiedDevices(devices: SetCertifiedDevicesArguments['devices']) {
-		return this.request(RPCCommand.SetCertifiedDevices, { devices });
+	public setCertifiedDevices(devices) {
+		return this.request(RPCCommands.SET_CERTIFIED_DEVICES, {
+			devices: devices.map((d) => ({
+				type: d.type,
+				id: d.uuid,
+				vendor: d.vendor,
+				model: d.model,
+				related: d.related,
+				echo_cancellation: d.echoCancellation,
+				noise_suppression: d.noiseSuppression,
+				automatic_gain_control: d.automaticGainControl,
+				hardware_mute: d.hardwareMute,
+			})),
+		});
 	}
 
 	/**
@@ -405,11 +343,17 @@ export class RPCClient extends EventEmitter {
 
 	/**
 	 * Set the voice settings for a user, by id
-	 * @param {SetUserVoiceSettingsData} settings Settings
+	 * @param {Snowflake} id ID of the user to set
+	 * @param {UserVoiceSettings} settings Settings
 	 * @returns {Promise}
 	 */
-	public setUserVoiceSettings(settings: SetUserVoiceSettingsData) {
-		return this.request(RPCCommand.SetUserVoiceSettings, settings);
+	public setUserVoiceSettings(id, settings) {
+		return this.request(RPCCommands.SET_USER_VOICE_SETTINGS, {
+			user_id: id,
+			pan: settings.pan,
+			mute: settings.mute,
+			volume: settings.volume,
+		});
 	}
 
 	/**
@@ -419,52 +363,94 @@ export class RPCClient extends EventEmitter {
 	 * @param {number} [options.timeout] Timeout for the command
 	 * @param {boolean} [options.force] Force this move. This should only be done if you
 	 * have explicit permission from the user.
-	 * @returns {Promise<GetChannelResponseData | null>}
+	 * @returns {Promise}
 	 */
-	public selectVoiceChannel(
-		id: Snowflake,
-		args: Omit<SelectVoiceChannelArguments, 'channel_id'>,
-	): Promise<GetChannelResponseData | null> {
-		return this.request(RPCCommand.SelectVoiceChannel, {
-			channel_id: id,
-			timeout: args.timeout!,
-			force: 'force' in args ? args.force : false,
-		}) as Promise<GetChannelResponseData | null>;
+	public selectVoiceChannel(id, { timeout, force = false } = {}) {
+		return this.request(RPCCommands.SELECT_VOICE_CHANNEL, { channel_id: id, timeout, force });
 	}
 
 	/**
 	 * Move the user to a text channel
-	 * @param {SelectTextChannelArguments} [args] select text channel arguments
-	 *
+	 * @param {Snowflake} id ID of the voice channel
+	 * @param {Object} [options] Options
+	 * @param {number} [options.timeout] Timeout for the command
 	 * have explicit permission from the user.
-	 * @returns {Promise<GetChannelResponseData | null>}
+	 * @returns {Promise}
 	 */
-	public selectTextChannel(
-		id: Snowflake | null,
-		args: Omit<SelectTextChannelArguments, 'channel_id'>,
-	): Promise<GetChannelResponseData | null> {
-		return this.request(RPCCommand.SelectTextChannel, {
-			channel_id: id,
-			timeout: args.timeout!,
-		}) as Promise<GetChannelResponseData | null>;
+	public selectTextChannel(id, { timeout } = {}) {
+		return this.request(RPCCommands.SELECT_TEXT_CHANNEL, { channel_id: id, timeout });
 	}
 
 	/**
 	 * Get current voice settings
-	 * @returns {Promise<GetVoiceSettingsResponseData>}
+	 * @returns {Promise}
 	 */
-	public getVoiceSettings(): Promise<GetVoiceSettingsResponseData> {
-		return this.request(RPCCommand.GetVoiceSettings).then((s) => s as GetVoiceSettingsResponseData);
+	public getVoiceSettings() {
+		return this.request(RPCCommands.GET_VOICE_SETTINGS).then((s) => ({
+			automaticGainControl: s.automatic_gain_control,
+			echoCancellation: s.echo_cancellation,
+			noiseSuppression: s.noise_suppression,
+			qos: s.qos,
+			silenceWarning: s.silence_warning,
+			deaf: s.deaf,
+			mute: s.mute,
+			input: {
+				availableDevices: s.input.available_devices,
+				device: s.input.device_id,
+				volume: s.input.volume,
+			},
+			output: {
+				availableDevices: s.output.available_devices,
+				device: s.output.device_id,
+				volume: s.output.volume,
+			},
+			mode: {
+				type: s.mode.type,
+				autoThreshold: s.mode.auto_threshold,
+				threshold: s.mode.threshold,
+				shortcut: s.mode.shortcut,
+				delay: s.mode.delay,
+			},
+		}));
 	}
 
 	/**
 	 * Set current voice settings, overriding the current settings until this session disconnects.
 	 * This also locks the settings for any other rpc sessions which may be connected.
-	 * @param {GetVoiceSettingsResponseData} args Settings
+	 * @param {Object} args Settings
 	 * @returns {Promise}
 	 */
-	public setVoiceSettings(args: GetVoiceSettingsResponseData): Promise<unknown> {
-		return this.request(RPCCommand.SetVoiceSettings, args);
+	public setVoiceSettings(args) {
+		return this.request(RPCCommands.SET_VOICE_SETTINGS, {
+			automatic_gain_control: args.automaticGainControl,
+			echo_cancellation: args.echoCancellation,
+			noise_suppression: args.noiseSuppression,
+			qos: args.qos,
+			silence_warning: args.silenceWarning,
+			deaf: args.deaf,
+			mute: args.mute,
+			input: args.input
+				? {
+						device_id: args.input.device,
+						volume: args.input.volume,
+				  }
+				: undefined,
+			output: args.output
+				? {
+						device_id: args.output.device,
+						volume: args.output.volume,
+				  }
+				: undefined,
+			mode: args.mode
+				? {
+						type: args.mode.type,
+						auto_threshold: args.mode.autoThreshold,
+						threshold: args.mode.threshold,
+						shortcut: args.mode.shortcut,
+						delay: args.mode.delay,
+				  }
+				: undefined,
+		});
 	}
 
 	/**
@@ -475,44 +461,81 @@ export class RPCClient extends EventEmitter {
 	 * @param {Function} callback Callback handling keys
 	 * @returns {Promise<Function>}
 	 */
-	public captureShortcut(callback: (key: string, stop: () => Promise<unknown>) => void) {
-		const subid = subKey(RPCEvent.CaptureShortcutChange);
+	public captureShortcut(callback) {
+		const subid = subKey(RPCEvents.CAPTURE_SHORTCUT_CHANGE);
 		const stop = () => {
 			this._subscriptions.delete(subid);
-			return this.request(RPCCommand.CaptureShortcut, { action: 'STOP' });
+			return this.request(RPCCommands.CAPTURE_SHORTCUT, { action: 'STOP' });
 		};
 		this._subscriptions.set(subid, ({ shortcut }) => {
 			callback(shortcut, stop);
 		});
-		return this.request(RPCCommand.CaptureShortcut, { action: 'START' }).then(() => stop);
+		return this.request(RPCCommands.CAPTURE_SHORTCUT, { action: 'START' }).then(() => stop);
 	}
 
 	/**
 	 * Sets the presence for the logged in user.
-	 * @param {SetActivityArguments['activity']} activity The rich presence to pass.
+	 * @param {object} args The rich presence to pass.
 	 * @param {number} [pid] The application's process ID. Defaults to the executing process' PID.
 	 * @returns {Promise}
 	 */
-	public setActivity(
-		activity: NonNullable<SetActivityArguments['activity']>,
-		pid: number | null = getPid(),
-	): Promise<unknown> {
-		if ('timestamps' in activity) {
-			activity.timestamps = {
-				start: activity.timestamps.start ?? Date.now(),
-				end: (activity.timestamps.end ?? null) as unknown as number,
+	public setActivity(args = {}, pid = getPid()) {
+		let timestamps;
+		let assets;
+		let party;
+		let secrets;
+		if (args.startTimestamp || args.endTimestamp) {
+			timestamps = {
+				start: args.startTimestamp,
+				end: args.endTimestamp,
 			};
-			if (activity.timestamps.start! > 2147483647000) {
+			if (timestamps.start instanceof Date) {
+				timestamps.start = Math.round(timestamps.start.getTime());
+			}
+			if (timestamps.end instanceof Date) {
+				timestamps.end = Math.round(timestamps.end.getTime());
+			}
+			if (timestamps.start > 2147483647000) {
 				throw new RangeError('timestamps.start must fit into a unix timestamp');
 			}
-			if (activity.timestamps.end! > 2147483647000) {
+			if (timestamps.end > 2147483647000) {
 				throw new RangeError('timestamps.end must fit into a unix timestamp');
 			}
 		}
+		if (args.largeImageKey || args.largeImageText || args.smallImageKey || args.smallImageText) {
+			assets = {
+				large_image: args.largeImageKey,
+				large_text: args.largeImageText,
+				small_image: args.smallImageKey,
+				small_text: args.smallImageText,
+			};
+		}
+		if (args.partySize || args.partyId || args.partyMax) {
+			party = { id: args.partyId };
+			if (args.partySize || args.partyMax) {
+				party.size = [args.partySize, args.partyMax];
+			}
+		}
+		if (args.matchSecret || args.joinSecret || args.spectateSecret) {
+			secrets = {
+				match: args.matchSecret,
+				join: args.joinSecret,
+				spectate: args.spectateSecret,
+			};
+		}
 
-		return this.request(RPCCommand.SetActivity, {
-			pid: pid!,
-			activity,
+		return this.request(RPCCommands.SET_ACTIVITY, {
+			pid,
+			activity: {
+				state: args.state,
+				details: args.details,
+				timestamps,
+				assets,
+				party,
+				secrets,
+				buttons: args.buttons,
+				instance: Boolean(args.instance),
+			},
 		});
 	}
 
@@ -522,115 +545,100 @@ export class RPCClient extends EventEmitter {
 	 * @param {number} [pid] The application's process ID. Defaults to the executing process' PID.
 	 * @returns {Promise}
 	 */
-	public clearActivity(pid: number = getPid()!): Promise<unknown> {
-		return this.request(RPCCommand.SetActivity, {
+	public clearActivity(pid = getPid()) {
+		return this.request(RPCCommands.SET_ACTIVITY, {
 			pid,
 		});
 	}
 
 	/**
 	 * Invite a user to join the game the RPC user is currently playing
-	 * @param {string} user_id The user to invite
+	 * @param {User} user The user to invite
 	 * @returns {Promise}
 	 */
-	public sendJoinInvite(user_id: string): Promise<unknown> {
-		return this.request(RPCCommand.SendActivityJoinInvite, {
-			user_id,
+	public sendJoinInvite(user) {
+		return this.request(RPCCommands.SEND_ACTIVITY_JOIN_INVITE, {
+			user_id: user.id || user,
 		});
 	}
 
 	/**
 	 * Request to join the game the user is playing
-	 * @param {Snowflake} id The id of the user whose game you want to request to join
+	 * @param {User} user The user whose game you want to request to join
 	 * @returns {Promise}
 	 */
-	public sendJoinRequest(id: Snowflake): Promise<unknown> {
-		return this.request(RPCCommand.CloseActivityJoinRequest, {
-			user_id: id,
+	public sendJoinRequest(user) {
+		return this.request(RPCCommands.SEND_ACTIVITY_JOIN_REQUEST, {
+			user_id: user.id || user,
 		});
 	}
 
 	/**
 	 * Reject a join request from a user
-	 * @param {string} user_id The user whose request you wish to reject
+	 * @param {User} user The user whose request you wish to reject
 	 * @returns {Promise}
 	 */
-	public closeJoinRequest(user_id: string): Promise<unknown> {
-		return this.request(RPCCommand.CloseActivityRequest, {
-			user_id,
+	public closeJoinRequest(user) {
+		return this.request(RPCCommands.CLOSE_ACTIVITY_JOIN_REQUEST, {
+			user_id: user.id || user,
 		});
 	}
 
-	public createLobby(type: LobbyTypes, capacity: number, metadata: { key: string; value: string }): Promise<unknown> {
-		return this.request(RPCCommand.CreateLobby, {
+	public createLobby(type, capacity, metadata) {
+		return this.request(RPCCommands.CREATE_LOBBY, {
 			type,
 			capacity,
 			metadata,
 		});
 	}
 
-	public updateLobby(
-		id: number,
-		{
+	public updateLobby(lobby, { type, owner, capacity, metadata } = {}) {
+		return this.request(RPCCommands.UPDATE_LOBBY, {
+			id: lobby.id || lobby,
 			type,
-			owner_id,
-			capacity,
-			metadata,
-		}: Partial<{ type: LobbyTypes; owner_id: number; capacity: number; metadata: { key: string; value: string } }>,
-	) {
-		return this.request(RPCCommand.UpdateLobby, {
-			id,
-			type,
-			owner_id,
+			owner_id: (owner && owner.id) || owner,
 			capacity,
 			metadata,
 		});
 	}
 
-	public deleteLobby(id: number): Promise<unknown> {
-		return this.request(RPCCommand.DeleteLobby, {
-			id,
+	public deleteLobby(lobby) {
+		return this.request(RPCCommands.DELETE_LOBBY, {
+			id: lobby.id || lobby,
 		});
 	}
 
-	public connectToLobby(id: number, secret: string): Promise<unknown> {
-		return this.request(RPCCommand.ConnectToLobby, {
+	public connectToLobby(id, secret) {
+		return this.request(RPCCommands.CONNECT_TO_LOBBY, {
 			id,
 			secret,
 		});
 	}
 
-	/**
-	 * Sends a message to the lobby if the user is in the specified lobby.
-	 * @param id The id of the lobby to join
-	 * @param data The data to send to the lobby
-	 * @returns {Promise}
-	 */
-	public sendToLobby(id: number, data: ArrayBuffer): Promise<unknown> {
-		return this.request(RPCCommand.SendToLobby, {
-			id,
+	public sendToLobby(lobby, data) {
+		return this.request(RPCCommands.SEND_TO_LOBBY, {
+			id: lobby.id || lobby,
 			data,
 		});
 	}
 
-	public disconnectFromLobby(id: number): Promise<unknown> {
-		return this.request(RPCCommand.DisconnectFromLobby, {
-			id,
+	public disconnectFromLobby(lobby) {
+		return this.request(RPCCommands.DISCONNECT_FROM_LOBBY, {
+			id: lobby.id || lobby,
 		});
 	}
 
-	public updateLobbyMember(id: number, user: Snowflake, metadata: { key: string; value: string }): Promise<unknown> {
-		return this.request(RPCCommand.UpdateLobbyMember, {
-			lobby_id: id,
-			user_id: user,
+	public updateLobbyMember(lobby, user, metadata) {
+		return this.request(RPCCommands.UPDATE_LOBBY_MEMBER, {
+			lobby_id: lobby.id || lobby,
+			user_id: user.id || user,
 			metadata,
 		});
 	}
 
 	public getRelationships() {
-		// why does get the keys and attempts to index them from the request?
 		const types = Object.keys(RelationshipTypes);
-		return (this.request(RPCCommand.GetRelationships) as Promise<{ relationships: RelationShip[] }>).then((o) =>
+		return this.request(RPCCommands.GET_RELATIONSHIPS).then((o) =>
 			o.relationships.map((r) => ({
 				...r,
 				type: types[r.type],
@@ -640,14 +648,14 @@ export class RPCClient extends EventEmitter {
 
 	/**
 	 * Subscribe to an event
-	 * @param {RPCEvent} event Name of event e.g. `MESSAGE_CREATE`
-	 * @param {RPCArguments} [args] Args for event e.g. `{ channel_id: '1234' }`
+	 * @param {string} event Name of event e.g. `MESSAGE_CREATE`
+	 * @param {Object} [args] Args for event e.g. `{ channel_id: '1234' }`
 	 * @returns {Promise<Object>}
 	 */
-	public async subscribe(event: RPCEvent, args: RPCArguments): Promise<object> {
-		await this.request(RPCCommand.Subscribe, args, event);
+	public async subscribe(event, args) {
+		await this.request(RPCCommands.SUBSCRIBE, args, event);
 		return {
-			unsubscribe: () => this.request(RPCCommand.Unsubscribe, args, event),
+			unsubscribe: () => this.request(RPCCommands.UNSUBSCRIBE, args, event),
 		};
 	}
 
@@ -658,3 +666,5 @@ export class RPCClient extends EventEmitter {
 		await this.transport.close();
 	}
 }
+
+module.exports = RPCClient;
