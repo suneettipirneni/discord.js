@@ -7,5 +7,9 @@
 		"source.organizeImports": false
 	},
 	"unocss.root": "./packages/website",
+<<<<<<< HEAD
 	"typescript.tsdk": "node_modules/typescript/lib"
+=======
+	"testing.automaticallyOpenPeekView": "never"
+>>>>>>> 796c08ce (feat(rpc): initial commit)
 }
