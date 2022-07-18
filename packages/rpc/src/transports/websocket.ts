@@ -1,4 +1,4 @@
-import { EventEmitter } from 'node:events';
+import EventEmitter from 'events';
 import type { default as WebSocketType } from 'ws';
 import type { Transport } from './index';
 import type { RPCClient } from '../client';
@@ -13,7 +13,7 @@ const WebSocket = (browser ? window.WebSocket : require('ws')) as WebSocketConst
 const pack = (d: Record<string, unknown> | string) => JSON.stringify(d);
 const unpack = (s: string) => JSON.parse(s) as Record<string, unknown>;
 
-export class WebSocketTransport extends EventEmitter implements Transport {
+class WebSocketTransport extends EventEmitter implements Transport {
 	private readonly client: RPCClient;
 	private ws: WebSocketType | null;
 	private tries: number;
@@ -82,3 +82,5 @@ export class WebSocketTransport extends EventEmitter implements Transport {
 		});
 	}
 }
+
+module.exports = WebSocketTransport;

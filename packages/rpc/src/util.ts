@@ -1,14 +1,18 @@
-let register: (id: string) => void = () => false;
+let register;
 try {
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+	// eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires, @typescript-eslint/no-unsafe-assignment
 	const { app } = require('electron');
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+	// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
 	register = app.setAsDefaultProtocolClient.bind(app);
 } catch (err) {
 	try {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-require-imports
 		register = require('register-scheme');
 	} catch (e) {} // eslint-disable-line no-empty
+}
+
+if (typeof register !== 'function') {
+	register = () => false;
 }
 
 function pid() {

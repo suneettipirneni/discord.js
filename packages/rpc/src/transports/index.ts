@@ -5,7 +5,5 @@ export interface Transport {
 	send: (data: any) => void;
 }
 
-import { default as ipc } from './ipc';
-import { WebSocketTransport as websocket } from './websocket';
-
-export const transports = { ipc, websocket };
+export { default as IPCTransport } from './ipc';
+export { default as WSTransport } from './ws';

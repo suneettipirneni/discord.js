@@ -1,5 +1,5 @@
+import EventEmitter from 'events';
 import net, { type Socket } from 'net';
-import { EventEmitter } from 'node:events';
 import { fetch } from 'undici';
 import type { Transport } from './index';
 import type { RPCPayload, RPCResponsePayload } from './types';
@@ -145,7 +145,7 @@ class IPCTransport extends EventEmitter implements Transport {
 						if (data.cmd === 'AUTHORIZE' && data.evt !== 'ERROR') {
 							findEndpoint()
 								.then((endpoint) => {
-									this.client.updateEndpoint(endpoint);
+									this.client.request.endpoint = endpoint;
 								})
 								.catch((e) => {
 									this.client.emit('error', e);
@@ -183,5 +183,7 @@ class IPCTransport extends EventEmitter implements Transport {
 		this.send(uuid(), OPCodes.PING);
 	}
 }
+
+module.exports = IPCTransport;
 
 export { IPCTransport as default, encode, decode };
