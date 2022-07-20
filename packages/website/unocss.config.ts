@@ -6,6 +6,10 @@ export default defineConfig({
 		colors: {
 			blurple: '#5865F2',
 		},
+		fontFamily: {
+			sans: ['Inter var', 'sans-serif'],
+			mono: ['JetBrains Mono', 'monospace'],
+		},
 	},
 	presets: [
 		presetUno({

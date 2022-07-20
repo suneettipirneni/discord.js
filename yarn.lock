@@ -2871,6 +2871,8 @@ __metadata:
     "@remix-run/serve": ^1.6.5
     "@remix-run/server-runtime": ^1.6.5
     "@remix-run/vercel": ^1.6.5
+    "@skyra/discord-components-core": ^3.4.0
+    "@skyra/discord-components-react": ^3.4.0
     "@testing-library/cypress": ^8.0.3
     "@testing-library/dom": ^8.16.0
     "@testing-library/jest-dom": ^5.16.4
@@ -2896,9 +2898,11 @@ __metadata:
     eslint-plugin-import: ^2.26.0
     eslint-plugin-react: ^7.30.1
     eslint-plugin-react-hooks: ^4.6.0
+    framer-motion: ^6.5.1
     happy-dom: ^6.0.4
     msw: ^0.44.1
     prettier: ^2.7.1
+    prettier-plugin-tailwindcss: ^0.1.12
     react: ^18.2.0
     react-dom: ^18.2.0
     react-icons: ^4.4.0
@@ -2909,6 +2913,22 @@ __metadata:
     vitest: ^0.18.1
   languageName: unknown
   linkType: soft
+
+"@emotion/is-prop-valid@npm:^0.8.2":
+  version: 0.8.8
+  resolution: "@emotion/is-prop-valid@npm:0.8.8"
+  dependencies:
+    "@emotion/memoize": 0.7.4
+  checksum: bb7ec6d48c572c540e24e47cc94fc2f8dec2d6a342ae97bc9c8b6388d9b8d283862672172a1bb62d335c02662afe6291e10c71e9b8642664a8b43416cdceffac
+  languageName: node
+  linkType: hard
+
+"@emotion/memoize@npm:0.7.4":
+  version: 0.7.4
+  resolution: "@emotion/memoize@npm:0.7.4"
+  checksum: 4e3920d4ec95995657a37beb43d3f4b7d89fed6caa2b173a4c04d10482d089d5c3ea50bbc96618d918b020f26ed6e9c4026bbd45433566576c1f7b056c3271dc
+  languageName: node
+  linkType: hard
 
 "@esbuild-plugins/node-modules-polyfill@npm:^0.1.4":
   version: 0.1.4
@@ -3446,6 +3466,71 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@motionone/animation@npm:^10.12.0":
+  version: 10.13.1
+  resolution: "@motionone/animation@npm:10.13.1"
+  dependencies:
+    "@motionone/easing": ^10.13.1
+    "@motionone/types": ^10.13.0
+    "@motionone/utils": ^10.13.1
+    tslib: ^2.3.1
+  checksum: bf3f95f1c100a18e170fd55fa3d16c6f674fe02dd0f344e78a8ae7e6ffac3510612e9f0b7a5a73fae3bb91b7c3d4e287f605e4feeb8a92538c3588d3ab8a4a70
+  languageName: node
+  linkType: hard
+
+"@motionone/dom@npm:10.12.0":
+  version: 10.12.0
+  resolution: "@motionone/dom@npm:10.12.0"
+  dependencies:
+    "@motionone/animation": ^10.12.0
+    "@motionone/generators": ^10.12.0
+    "@motionone/types": ^10.12.0
+    "@motionone/utils": ^10.12.0
+    hey-listen: ^1.0.8
+    tslib: ^2.3.1
+  checksum: 123356f28e44362c4f081aae3df22e576f46bfcb07e01257b2ac64a115668448f29b8de67e4b6e692c5407cffb78ffe7cf9fa1bc064007482bab5dd23a69d380
+  languageName: node
+  linkType: hard
+
+"@motionone/easing@npm:^10.13.1":
+  version: 10.13.1
+  resolution: "@motionone/easing@npm:10.13.1"
+  dependencies:
+    "@motionone/utils": ^10.13.1
+    tslib: ^2.3.1
+  checksum: 04d3c2d1458795d207067a8341ac23b5037b11d9e7160f91bb953438551255d072012dd22aaed678d0f88792143ad16c9566e131003ec047ef7938529a27b485
+  languageName: node
+  linkType: hard
+
+"@motionone/generators@npm:^10.12.0":
+  version: 10.13.1
+  resolution: "@motionone/generators@npm:10.13.1"
+  dependencies:
+    "@motionone/types": ^10.13.0
+    "@motionone/utils": ^10.13.1
+    tslib: ^2.3.1
+  checksum: d4b91d0352c00275644c5e33bf031545212f94821aa6f7fdc26fa92f054138c76ff89c77a3b10ca167b447e4cf7c019a9628688c9635a21528da2ea260724fbc
+  languageName: node
+  linkType: hard
+
+"@motionone/types@npm:^10.12.0, @motionone/types@npm:^10.13.0":
+  version: 10.13.0
+  resolution: "@motionone/types@npm:10.13.0"
+  checksum: 4c0a4593562f3c8fa30660a3b796ec012d592029137fc35f3029b34e69e5c364efa24c2016dd66b21db580d0a9d4107730b30f55496b416b2ed9dbe437865eab
+  languageName: node
+  linkType: hard
+
+"@motionone/utils@npm:^10.12.0, @motionone/utils@npm:^10.13.1":
+  version: 10.13.1
+  resolution: "@motionone/utils@npm:10.13.1"
+  dependencies:
+    "@motionone/types": ^10.13.0
+    hey-listen: ^1.0.8
+    tslib: ^2.3.1
+  checksum: 2ec2de91d07f7bd1dcb157d96c0c0f7565d1e8c6ac9adec0ce33811a321fea72d45a4c51833d2c3e432c26b3904e17e3296d553ad87b4b6705d6fba93cd22aca
+  languageName: node
+  linkType: hard
+
 "@mswjs/cookies@npm:^0.2.2":
   version: 0.2.2
   resolution: "@mswjs/cookies@npm:0.2.2"
@@ -3907,6 +3992,39 @@ __metadata:
   dependencies:
     "@sinonjs/commons": ^1.7.0
   checksum: 7d3aef54e17c1073101cb64d953157c19d62a40e261a30923fa1ee337b049c5f29cc47b1f0c477880f42b5659848ba9ab897607ac8ea4acd5c30ddcfac57fca6
+  languageName: node
+  linkType: hard
+
+"@skyra/discord-components-core@npm:^3.4.0":
+  version: 3.4.0
+  resolution: "@skyra/discord-components-core@npm:3.4.0"
+  dependencies:
+    "@stencil/core": ^2.15.2
+    clsx: ^1.1.1
+    hex-to-rgba: ^2.0.1
+  checksum: ccc84505f54e9ac5f8ec47feb49991adf49276ee7be4264c4fb91927bdbd2dccea59a6023ecec52978ae98223f6dd8858800fcfd723f30e19c9afeb6db93bfb5
+  languageName: node
+  linkType: hard
+
+"@skyra/discord-components-react@npm:^3.4.0":
+  version: 3.4.0
+  resolution: "@skyra/discord-components-react@npm:3.4.0"
+  dependencies:
+    "@skyra/discord-components-core": ^3.4.0
+    tslib: ^2.4.0
+  peerDependencies:
+    react: 16.8.x || 17.x || 18.x
+    react-dom: 16.8.x || 17.x || 18.x
+  checksum: 2c7f26d4aebf247239195cf61d3d8d96fe9827ab0d1f7252bf477a6d3d360f97470a0a3a2dd011ea02db2c0c455bdc1cf50adcee6cba6bb5c7ae2a2ce9d1e664
+  languageName: node
+  linkType: hard
+
+"@stencil/core@npm:^2.15.2":
+  version: 2.17.1
+  resolution: "@stencil/core@npm:2.17.1"
+  bin:
+    stencil: bin/stencil
+  checksum: dc660f9219952e569c7357ee0f601b6835f71bfae33997f7be7b5eb14694cc725e19166da20f6af49f467456402551e6dfffcee13205158eeb77aaf1c5911a65
   languageName: node
   linkType: hard
 
@@ -6510,6 +6628,13 @@ __metadata:
   version: 1.0.4
   resolution: "clone@npm:1.0.4"
   checksum: d06418b7335897209e77bdd430d04f882189582e67bd1f75a04565f3f07f5b3f119a9d670c943b6697d0afb100f03b866b3b8a1f91d4d02d72c4ecf2bb64b5dd
+  languageName: node
+  linkType: hard
+
+"clsx@npm:^1.1.1":
+  version: 1.2.1
+  resolution: "clsx@npm:1.2.1"
+  checksum: 30befca8019b2eb7dbad38cff6266cf543091dae2825c856a62a8ccf2c3ab9c2907c4d12b288b73101196767f66812365400a227581484a05f968b0307cfaf12
   languageName: node
   linkType: hard
 
@@ -9673,6 +9798,36 @@ dts-critic@latest:
   languageName: node
   linkType: hard
 
+"framer-motion@npm:^6.5.1":
+  version: 6.5.1
+  resolution: "framer-motion@npm:6.5.1"
+  dependencies:
+    "@emotion/is-prop-valid": ^0.8.2
+    "@motionone/dom": 10.12.0
+    framesync: 6.0.1
+    hey-listen: ^1.0.8
+    popmotion: 11.0.3
+    style-value-types: 5.0.0
+    tslib: ^2.1.0
+  peerDependencies:
+    react: ">=16.8 || ^17.0.0 || ^18.0.0"
+    react-dom: ">=16.8 || ^17.0.0 || ^18.0.0"
+  dependenciesMeta:
+    "@emotion/is-prop-valid":
+      optional: true
+  checksum: 737959063137b4ccafe01e0ac0c9e5a9531bf3f729f62c34ca7a5d7955e6664f70affd22b044f7db51df41acb21d120a4f71a860e17a80c4db766ad66f2153a1
+  languageName: node
+  linkType: hard
+
+"framesync@npm:6.0.1":
+  version: 6.0.1
+  resolution: "framesync@npm:6.0.1"
+  dependencies:
+    tslib: ^2.1.0
+  checksum: a23ebe8f7e20a32c0b99c2f8175b6f07af3ec6316aad52a2316316a6d011d717af8d2175dcc2827031c59fabb30232ed3e19a720a373caba7f070e1eae436325
+  languageName: node
+  linkType: hard
+
 "fresh@npm:0.5.2":
   version: 0.5.2
   resolution: "fresh@npm:0.5.2"
@@ -10524,10 +10679,24 @@ dts-critic@latest:
   languageName: node
   linkType: hard
 
+"hex-to-rgba@npm:^2.0.1":
+  version: 2.0.1
+  resolution: "hex-to-rgba@npm:2.0.1"
+  checksum: adbb81babe9d06cf743b925e2104968bb32d9e10f0de328b71c9e20ff52da4028fadde4623261866eaed4d9a3b975fb325fa34f2422eb035e839ed71ec462431
+  languageName: node
+  linkType: hard
+
 "hexoid@npm:1.0.0":
   version: 1.0.0
   resolution: "hexoid@npm:1.0.0"
   checksum: 27a148ca76a2358287f40445870116baaff4a0ed0acc99900bf167f0f708ffd82e044ff55e9949c71963852b580fc024146d3ac6d5d76b508b78d927fa48ae2d
+  languageName: node
+  linkType: hard
+
+"hey-listen@npm:^1.0.8":
+  version: 1.0.8
+  resolution: "hey-listen@npm:1.0.8"
+  checksum: 6bad60b367688f5348e25e7ca3276a74b59ac5a09b0455e6ff8ab7d4a9e38cd2116c708a7dcd8a954d27253ce1d8717ec891d175723ea739885b828cf44e4072
   languageName: node
   linkType: hard
 
@@ -14863,6 +15032,18 @@ dts-critic@latest:
   languageName: node
   linkType: hard
 
+"popmotion@npm:11.0.3":
+  version: 11.0.3
+  resolution: "popmotion@npm:11.0.3"
+  dependencies:
+    framesync: 6.0.1
+    hey-listen: ^1.0.8
+    style-value-types: 5.0.0
+    tslib: ^2.1.0
+  checksum: 9fe7d03b4ec0e85bfb9dadc23b745147bfe42e16f466ba06e6327197d0e38b72015afc2f918a8051dedc3680310417f346ffdc463be6518e2e92e98f48e30268
+  languageName: node
+  linkType: hard
+
 "posix-character-classes@npm:^0.1.0":
   version: 0.1.1
   resolution: "posix-character-classes@npm:0.1.1"
@@ -14903,6 +15084,15 @@ dts-critic@latest:
   version: 1.2.1
   resolution: "prelude-ls@npm:1.2.1"
   checksum: cd192ec0d0a8e4c6da3bb80e4f62afe336df3f76271ac6deb0e6a36187133b6073a19e9727a1ff108cd8b9982e4768850d413baa71214dd80c7979617dca827a
+  languageName: node
+  linkType: hard
+
+"prettier-plugin-tailwindcss@npm:^0.1.12":
+  version: 0.1.12
+  resolution: "prettier-plugin-tailwindcss@npm:0.1.12"
+  peerDependencies:
+    prettier: ">=2.2.0"
+  checksum: 9dd6ad6b4902ebf57de6421f09395cfb6a5db1108869516142f72ff469875542308e148becf2de1c6b88af0e2aa11cbcec41640eb9e3df04bdb001d4834f4a5e
   languageName: node
   linkType: hard
 
@@ -16947,6 +17137,16 @@ dts-critic@latest:
   languageName: node
   linkType: hard
 
+"style-value-types@npm:5.0.0":
+  version: 5.0.0
+  resolution: "style-value-types@npm:5.0.0"
+  dependencies:
+    hey-listen: ^1.0.8
+    tslib: ^2.1.0
+  checksum: 16d198302cd102edf9dba94e7752a2364c93b1eaa5cc7c32b42b28eef4af4ccb5149a3f16bc2a256adc02616a2404f4612bd15f3081c1e8ca06132cae78be6c0
+  languageName: node
+  linkType: hard
+
 "sucrase@npm:^3.20.3":
   version: 3.21.0
   resolution: "sucrase@npm:3.21.0"
@@ -17600,7 +17800,7 @@ dts-critic@latest:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.0.1, tslib@npm:^2.1.0, tslib@npm:^2.4.0":
+"tslib@npm:^2.0.1, tslib@npm:^2.1.0, tslib@npm:^2.3.1, tslib@npm:^2.4.0":
   version: 2.4.0
   resolution: "tslib@npm:2.4.0"
   checksum: 8c4aa6a3c5a754bf76aefc38026134180c053b7bd2f81338cb5e5ebf96fefa0f417bff221592bf801077f5bf990562f6264fecbc42cd3309b33872cb6fc3b113

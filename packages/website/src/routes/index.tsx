@@ -1,5 +1,7 @@
-import codeSample from '../assets/code-sample.png';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import logo from '../assets/djs_logo_rainbow_400x400.png';
+import { codeSampleText } from '../assets/sample-code';
 import * as text from '../text.json';
 
 interface ButtonProps {
@@ -8,18 +10,18 @@ interface ButtonProps {
 
 function Button({ title }: ButtonProps) {
 	return (
-		<div className="max-h-[70px] bg-blurple px-3 py-4 rounded-lg">
-			<p className="font-semibold text-white m-0">{title}</p>
+		<div className="bg-blurple max-h-[70px] rounded-lg px-3 py-4">
+			<p className="m-0 font-semibold text-white">{title}</p>
 		</div>
 	);
 }
 
 export default function IndexRoute() {
 	return (
-		<main className="w-full max-w-full max-h-full h-full flex-col bg-white dark:bg-dark overflow-y-auto">
-			<div className="flex h-[65px] sticky top-0 border-b border-slate-300 justify-center px-10 bg-white dark:bg-dark">
-				<div className="flex align-center items-center w-full max-w-[1100px] justify-between">
-					<div className="h-[50px] w-[50px] rounded-lg overflow-hidden">
+		<main className="dark:bg-dark h-full max-h-full w-full max-w-full flex-col overflow-y-auto bg-white">
+			<div className="dark:bg-dark sticky top-0 flex h-[65px] justify-center border-b border-slate-300 bg-white px-10">
+				<div className="align-center flex w-full max-w-[1100px] items-center justify-between">
+					<div className="h-[50px] w-[50px] overflow-hidden rounded-lg">
 						<img className="h-[50px] w-[50px]" src={logo} />
 					</div>
 					<div className="flex flex-row space-x-8">
@@ -28,18 +30,27 @@ export default function IndexRoute() {
 					</div>
 				</div>
 			</div>
-			<div className="xl:flex xl:justify-center w-full max-w-full box-border px-10">
-				<div className="flex flex-col xl:flex-row grow max-w-[1100px] mt-10 pb-10 space-y-10 xl:space-x-20 place-items-center">
-					<div className="flex flex-col max-w-[800px] lt-xl:items-center">
-						<h1 className="font-bold text-6xl text-blurple mb-2">{text.heroTitle}</h1>
-						<p className="text-xl text-dark-100 dark:text-gray-400">{text.heroDescription}</p>
-						<div className="flex flew-row space-x-4">
+			<div className="box-border w-full max-w-full px-10 xl:flex xl:justify-center">
+				<div className="mt-10 flex max-w-[1100px] grow flex-col place-items-center space-y-10 pb-10 xl:flex-row xl:space-x-20">
+					<div className="lt-xl:items-center flex max-w-[800px] flex-col">
+						<h1 className="text-blurple mb-2 text-6xl font-extrabold">{text.heroTitle}</h1>
+						<p className="text-dark-100 text-xl dark:text-gray-400">{text.heroDescription}</p>
+						<div className="flew-row flex space-x-4">
 							<Button title="Read the guide" />
 							<Button title="Check out the docs" />
 						</div>
 					</div>
-					<div className="sm:flex sm:grow sm:shrink h-full sm:align-center xl:items-center hidden">
-						<img src={codeSample} className="max-w-[600px] rounded-xl shadow-md overflow-hidden" />
+					<div className="sm:align-center hidden h-full sm:flex sm:shrink sm:grow xl:items-center">
+						<SyntaxHighlighter
+							className="rounded-3xl shadow-2xl"
+							wrapLines
+							showLineNumbers
+							language="typescript"
+							style={vscDarkPlus}
+							codeTagProps={{ style: { fontFamily: 'JetBrains Mono', paddingTop: '100px' } }}
+						>
+							{codeSampleText}
+						</SyntaxHighlighter>
 					</div>
 				</div>
 			</div>
