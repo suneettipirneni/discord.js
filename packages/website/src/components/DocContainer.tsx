@@ -21,15 +21,15 @@ export interface DocContainerProps {
 
 export function DocContainer({ name, kind, excerpt, summary, typeParams, children, extendsTokens }: DocContainerProps) {
 	return (
-		<div className="flex flex-col min-h-full max-h-full grow">
-			<div className="border-0.5 border-gray px-10 py-2">
+		<>
+			<div className="bg-white dark:bg-dark px-10 py-2">
 				<h2 className="flex gap-2 items-center break-all m-0 dark:text-white">
 					{generateIcon(kind)}
 					{name}
 				</h2>
 			</div>
 
-			<div className="min-h-full overflow-y-auto overflow-x-clip px-10 pt-5 pb-10">
+			<div className="px-10 pt-5 pb-10 rounded-xl">
 				<SyntaxHighlighter
 					wrapLines
 					wrapLongLines
@@ -65,6 +65,6 @@ export function DocContainer({ name, kind, excerpt, summary, typeParams, childre
 					<div className="space-y-10">{children}</div>
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }
