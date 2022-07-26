@@ -39,7 +39,38 @@ export class ActionRowBuilder<T extends AnyComponentBuilder> extends ComponentBu
 	/**
 	 * Adds components to this action row.
 	 *
+	 * @remarks
+	 *
+	 * This method is best used when editing an existing action row. Unlike {@link ActionRowBuilder.setComponents},
+	 * this method will not replace the existing components. Instead, it will append the provided components.
+	 *
+	 * In addition, there are certain restrictions on the number and types of components that can be added. Only one select menu or text input can
+	 * be added to an action row. An action row can contain up to five buttons.
+	 *
 	 * @param components - The components to add to this action row.
+	 *
+	 * @example
+	 * Adding a buttons to an action row without an array.
+	 * ```ts
+	 * const actionRow = new ActionRowBuilder();
+	 * 	.addComponents(
+	 * 		new ButtonBuilder()
+	 * 			.setText('Button 1')
+	 * 			.setStyle(ButtonStyle.Primary)
+	 * );
+	 * ```
+	 * @example
+	 * Adding a buttons to an action row with an array.
+	 * ```ts
+	 * const rowArray = [
+	 * 		new ButtonBuilder()
+	 * 			.setText('Button 1')
+	 * 			.setStyle(ButtonStyle.Primary)
+	 * ];
+	 * const actionRow = new ActionRowBuilder();
+	 * 	.addComponents(rowArray);
+	 * ```
+	 *
 	 */
 	public addComponents(...components: RestOrArray<T>) {
 		this.components.push(...normalizeArray(components));

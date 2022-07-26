@@ -125,6 +125,7 @@ export interface OptionalWebSocketManagerOptions {
 	 *     // Return null if no information is found
 	 *   },
 	 * });
+	 * ```
 	 */
 	retrieveSessionInfo: (shardId: number) => Awaitable<SessionInfo | null>;
 	/**

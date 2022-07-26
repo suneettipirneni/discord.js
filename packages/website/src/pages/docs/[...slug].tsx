@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-throw-literal */
+import path from 'path';
+import { ApiModel } from '@microsoft/api-extractor-model';
 import type { GetStaticPaths, GetStaticProps } from 'next/types';
 import type { DocClass } from '~/DocModel/DocClass';
 import type { DocEnum } from '~/DocModel/DocEnum';
@@ -61,7 +63,15 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const data = await res.json();
 
-		const model = createApiModel(data);
+		let model: ApiModel;
+
+		if (packageName === 'builders') {
+			model = new ApiModel();
+			model.loadPackage(path.join(process.cwd(), 'docs', 'builders.api.json'));
+		} else {
+			model = createApiModel(data);
+		}
+
 		const pkg = findPackage(model, packageName);
 
 		return {
@@ -73,7 +83,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 				},
 			},
 		};
-	} catch {
+	} catch (e) {
+		console.error(e);
 		return {
 			props: {
 				error: 'FetchError',

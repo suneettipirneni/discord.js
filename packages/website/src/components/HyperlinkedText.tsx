@@ -8,7 +8,7 @@ export interface HyperlinkedTextProps {
 /**
  * Constructs a hyperlinked html node based on token type references
  *
- * @param tokens An array of documentation tokens to construct the HTML
+ * @param tokens - An array of documentation tokens to construct the HTML
  *
  * @returns An array of JSX elements and string comprising the hyperlinked text
  */

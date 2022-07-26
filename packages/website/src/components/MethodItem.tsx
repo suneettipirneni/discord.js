@@ -1,6 +1,8 @@
 import { FiLink } from 'react-icons/fi';
+import { RemarksBlock } from './Comment';
 import { HyperlinkedText } from './HyperlinkedText';
 import { ParameterTable } from './ParameterTable';
+import { Section } from './Section';
 import type { DocMethod } from '~/DocModel/DocMethod';
 import type { DocMethodSignature } from '~/DocModel/DocMethodSignature';
 
@@ -28,10 +30,16 @@ function onAnchorClick() {
 export function MethodItem({ data }: MethodItemProps) {
 	return (
 		<div className="flex flex-col">
+			{data.remarks && (
+				<Section title="Remarks">
+					<RemarksBlock node={data.remarks} />
+				</Section>
+			)}
 			<div className="flex">
 				<button className="bg-transparent border-none cursor-pointer dark:text-white" onClick={onAnchorClick}>
 					<FiLink size={16} />
 				</button>
+
 				<div className="flex flex-col">
 					<div className="w-full flex flex-row gap-3">
 						<h4 className="font-mono m-0 break-all">{`${getShorthandName(data)}`}</h4>

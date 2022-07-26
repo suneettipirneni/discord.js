@@ -1,4 +1,5 @@
 import type { ApiModel, ApiDeclaredItem } from '@microsoft/api-extractor-model';
+import { CommentNodeContainer } from './comment/CommentNodeContainer';
 import type { ReferenceData } from '~/util/model.server';
 import { resolveName, genReference, resolveDocComment, TokenDocumentation, genToken } from '~/util/parse.server';
 
@@ -13,6 +14,7 @@ export class DocItem<T extends ApiDeclaredItem = ApiDeclaredItem> {
 	public readonly excerpt: string;
 	public readonly excerptTokens: TokenDocumentation[] = [];
 	public readonly kind: string;
+	public readonly remarks: CommentNodeContainer | null;
 
 	public constructor(model: ApiModel, item: T) {
 		this.item = item;
@@ -23,6 +25,9 @@ export class DocItem<T extends ApiDeclaredItem = ApiDeclaredItem> {
 		this.summary = resolveDocComment(item);
 		this.excerpt = item.excerpt.text;
 		this.excerptTokens = item.excerpt.spannedTokens.map((token) => genToken(model, token));
+		this.remarks = item.tsdocComment?.remarksBlock
+			? new CommentNodeContainer(item.tsdocComment.remarksBlock.content, model, item.parent)
+			: null;
 	}
 
 	public toJSON() {
@@ -33,6 +38,7 @@ export class DocItem<T extends ApiDeclaredItem = ApiDeclaredItem> {
 			excerpt: this.excerpt,
 			excerptTokens: this.excerptTokens,
 			kind: this.kind,
+			remarks: this.remarks?.toJSON() ?? null,
 		};
 	}
 }
