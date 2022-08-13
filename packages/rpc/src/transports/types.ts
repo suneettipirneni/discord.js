@@ -32,6 +32,51 @@ export enum RPCCommand {
 	SetActivity = 'SET_ACTIVITY',
 	SendActivityJoinInvite = 'SEND_ACTIVITY_JOIN_INVITE',
 	CloseActivityRequest = 'CLOSE_ACTIVITY_REQUEST',
+	// undocumented commands
+	CreateChannelInvite = 'CREATE_CHANNEL_INVITE',
+	GetRelationships = 'GET_RELATIONSHIPS',
+	GetUser = 'GET_USER',
+	SetUserVoiceSettings2 = 'SET_USER_VOICE_SETTINGS_2',
+	SetVoiceSettings2 = 'SET_VOICE_SETTINGS_2',
+	CaptureShortcut = 'CAPTURE_SHORTCUT',
+	CloseActivityJoinRequest = 'CLOSE_ACTIVITY_JOIN_REQUEST',
+	ActivityInviteUser = 'ACTIVITY_INVITE_USER',
+	AcceptActivityInvite = 'ACCEPT_ACTIVITY_INVITE',
+	InviteBrowser = 'INVITE_BROWSER',
+	DeepLink = 'DEEP_LINK',
+	ConnectionsCallback = 'CONNECTIONS_CALLBACK',
+	BrainTreePopupBridgeCallback = 'BRAINTREE_POPUP_BRIDGE_CALLBACK',
+	GiftCodeBrowser = 'GIFT_CODE_BROWSER',
+	GuildTemplateBrowser = 'GUILD_TEMPLATE_BROWSER',
+	Overlay = 'OVERLAY',
+	BrowserHandoff = 'BROWSER_HANDOFF',
+	GetImage = 'GET_IMAGE',
+	CreateLobby = 'CREATE_LOBBY',
+	UpdateLobby = 'UPDATE_LOBBY',
+	DeleteLobby = 'DELETE_LOBBY',
+	UpdateLobbyMember = 'UPDATE_LOBBY_MEMBER',
+	ConnectToLobby = 'CONNECT_TO_LOBBY',
+	DisconnectFromLobby = 'DISCONNECT_FROM_LOBBY',
+	SendToLobby = 'SEND_TO_LOBBY',
+	SearchLobbies = 'SEARCH_LOBBIES',
+	ConnectToLobbyVoice = 'CONNECT_TO_LOBBY_VOICE',
+	DisconnectFromLobbyVoice = 'DISCONNECT_FROM_LOBBY_VOICE',
+	SetOverlayLocked = 'SET_OVERLAY_LOCKED',
+	OpenOverlayActivityInvite = 'OPEN_OVERLAY_ACTIVITY_INVITE',
+	OpenOverlayGuildInvite = 'OPEN_OVERLAY_GUILD_INVITE',
+	OpenOverlayVoiceSettings = 'OPEN_OVERLAY_VOICE_SETTINGS',
+	ValidateApplication = 'VALIDATE_APPLICATION',
+	GetEntitlementTicket = 'GET_ENTITLEMENT_TICKET',
+	GetApplicationTicket = 'GET_APPLICATION_TICKET',
+	StartPurchase = 'START_PURCHASE',
+	GetSKUS = 'GET_SKUS',
+	GetEntitlements = 'GET_ENTITLEMENTS',
+	GetNetworkingConfig = 'GET_NETWORKING_CONFIG',
+	NetworkingSystemMetrics = 'NETWORKING_SYSTEM_METRICS',
+	NetworkingPeerMetrics = 'NETWORKING_PEER_METRICS',
+	NetworkingCreateToken = 'NETWORKING_CREATE_TOKEN',
+	SetUserAchievement = 'SET_USER_ACHIEVEMENT',
+	GetUserAchievements = 'GET_USER_ACHIEVEMENTS',
 }
 
 export enum RPCEvent {
@@ -55,6 +100,25 @@ export enum RPCEvent {
 	ActivityJoin = 'ACTIVITY_JOIN',
 	ActivitySpectate = 'ACTIVITY_SPECTATE',
 	ActivityJoinRequest = 'ACTIVITY_JOIN_REQUEST',
+	// undocumented events
+	CurrentUserUpdate = 'CURRENT_USER_UPDATE',
+	RelationshipUpdate = 'RELATIONSHIP_UPDATE',
+	VoiceSettingsUpdate2 = 'VOICE_SETTINGS_UPDATE_2',
+	GameJoin = 'GAME_JOIN',
+	GameSpectate = 'GAME_SPECTATE',
+	ActivityInvite = 'ACTIVITY_INVITE',
+	LobbyDelete = 'LOBBY_DELETE',
+	LobbyUpdate = 'LOBBY_UPDATE',
+	LobbyMemberConnect = 'LOBBY_MEMBER_CONNECT',
+	LobbyMemberDisconnect = 'LOBBY_MEMBER_DISCONNECT',
+	LobbyMemberUpdate = 'LOBBY_MEMBER_UPDATE',
+	LobbyMessage = 'LOBBY_MESSAGE',
+	CaptureShortcutChange = 'CAPTURE_SHORTCUT_CHANGE',
+	Overlay = 'OVERLAY',
+	OverlayUpdate = 'OVERLAY_UPDATE',
+	EntitlementCreate = 'ENTITLEMENT_CREATE',
+	EntitlementDelete = 'ENTITLEMENT_DELETE',
+	UserAchievementUpdate = 'USER_ACHIEVEMENT_UPDATE',
 }
 
 export enum VoiceConnectionStates {
@@ -316,6 +380,50 @@ export interface MappedRPCCommandsArguments<SubscribeEvent extends RPCEventsWith
 	[RPCCommand.SetActivity]: SetActivityArguments;
 	[RPCCommand.SendActivityJoinInvite]: SendActivityJoinInviteArguments;
 	[RPCCommand.CloseActivityRequest]: CloseActivityRequestArguments;
+	[RPCCommand.CreateChannelInvite]: unknown;
+	[RPCCommand.GetRelationships]: unknown;
+	[RPCCommand.GetUser]: unknown;
+	[RPCCommand.SetUserVoiceSettings2]: unknown;
+	[RPCCommand.SetVoiceSettings2]: unknown;
+	[RPCCommand.CaptureShortcut]: unknown;
+	[RPCCommand.CloseActivityJoinRequest]: unknown;
+	[RPCCommand.ActivityInviteUser]: unknown;
+	[RPCCommand.AcceptActivityInvite]: unknown;
+	[RPCCommand.InviteBrowser]: unknown;
+	[RPCCommand.DeepLink]: unknown;
+	[RPCCommand.ConnectionsCallback]: unknown;
+	[RPCCommand.BrainTreePopupBridgeCallback]: unknown;
+	[RPCCommand.GiftCodeBrowser]: unknown;
+	[RPCCommand.GuildTemplateBrowser]: unknown;
+	[RPCCommand.Overlay]: unknown;
+	[RPCCommand.BrowserHandoff]: unknown;
+	[RPCCommand.GetImage]: unknown;
+	[RPCCommand.CreateLobby]: unknown;
+	[RPCCommand.UpdateLobby]: unknown;
+	[RPCCommand.DeleteLobby]: unknown;
+	[RPCCommand.UpdateLobbyMember]: unknown;
+	[RPCCommand.ConnectToLobby]: unknown;
+	[RPCCommand.DisconnectFromLobby]: unknown;
+	[RPCCommand.SendToLobby]: unknown;
+	[RPCCommand.SearchLobbies]: unknown;
+	[RPCCommand.ConnectToLobbyVoice]: unknown;
+	[RPCCommand.DisconnectFromLobbyVoice]: unknown;
+	[RPCCommand.SetOverlayLocked]: unknown;
+	[RPCCommand.OpenOverlayActivityInvite]: unknown;
+	[RPCCommand.OpenOverlayGuildInvite]: unknown;
+	[RPCCommand.OpenOverlayVoiceSettings]: unknown;
+	[RPCCommand.ValidateApplication]: unknown;
+	[RPCCommand.GetEntitlementTicket]: unknown;
+	[RPCCommand.GetApplicationTicket]: unknown;
+	[RPCCommand.StartPurchase]: unknown;
+	[RPCCommand.GetSKUS]: unknown;
+	[RPCCommand.GetEntitlements]: unknown;
+	[RPCCommand.GetNetworkingConfig]: unknown;
+	[RPCCommand.NetworkingSystemMetrics]: unknown;
+	[RPCCommand.NetworkingPeerMetrics]: unknown;
+	[RPCCommand.NetworkingCreateToken]: unknown;
+	[RPCCommand.SetUserAchievement]: unknown;
+	[RPCCommand.GetUserAchievements]: unknown;
 }
 
 export type RPCArguments =
@@ -468,7 +576,7 @@ export interface SetUserVoiceSettingsPayload extends BaseRPCPayload {
 
 export interface SelectVoiceChannelArguments {
 	channel_id: Snowflake;
-	timeout: number;
+	timeout?: number;
 	force: boolean;
 }
 
@@ -483,8 +591,8 @@ export interface GetSelectedVoiceChannelPayload extends BaseRPCPayload {
 }
 
 export interface SelectTextChannelArguments {
-	channel_id: Snowflake;
-	timeout: number;
+	channel_id: Snowflake | null;
+	timeout?: number;
 }
 
 export interface SelectTextChannelPayload extends BaseRPCPayload {
@@ -625,7 +733,7 @@ export interface SetCertifiedDevicesPayload extends BaseRPCPayload {
 
 export interface SetActivityArguments {
 	pid: number;
-	activity: GatewayActivity;
+	activity?: Omit<GatewayActivity, 'name' | 'type' | 'id' | 'created_at'>;
 }
 
 export interface SetActivityPayload extends BaseRPCPayload {
@@ -700,6 +808,24 @@ export interface MappedRPCDispatchData {
 	[RPCEvent.ActivityJoin]: ActivityJoinDispatchData;
 	[RPCEvent.ActivitySpectate]: ActivitySpectateDispatchData;
 	[RPCEvent.ActivityJoinRequest]: ActivityJoinRequestDispatchData;
+	[RPCEvent.CurrentUserUpdate]: unknown;
+	[RPCEvent.RelationshipUpdate]: unknown;
+	[RPCEvent.VoiceSettingsUpdate2]: unknown;
+	[RPCEvent.GameJoin]: unknown;
+	[RPCEvent.GameSpectate]: unknown;
+	[RPCEvent.ActivityInvite]: unknown;
+	[RPCEvent.LobbyDelete]: unknown;
+	[RPCEvent.LobbyUpdate]: unknown;
+	[RPCEvent.LobbyMemberConnect]: unknown;
+	[RPCEvent.LobbyMemberDisconnect]: unknown;
+	[RPCEvent.LobbyMemberUpdate]: unknown;
+	[RPCEvent.LobbyMessage]: unknown;
+	[RPCEvent.CaptureShortcutChange]: unknown;
+	[RPCEvent.Overlay]: unknown;
+	[RPCEvent.OverlayUpdate]: unknown;
+	[RPCEvent.EntitlementCreate]: unknown;
+	[RPCEvent.EntitlementDelete]: unknown;
+	[RPCEvent.UserAchievementUpdate]: unknown;
 }
 
 export interface ReadyDispatchData {
@@ -826,6 +952,24 @@ export interface MappedRPCEventsArguments {
 	[RPCEvent.ActivityJoin]: undefined;
 	[RPCEvent.ActivitySpectate]: undefined;
 	[RPCEvent.ActivityJoinRequest]: undefined;
+	[RPCEvent.CurrentUserUpdate]: unknown;
+	[RPCEvent.RelationshipUpdate]: unknown;
+	[RPCEvent.VoiceSettingsUpdate2]: unknown;
+	[RPCEvent.GameJoin]: unknown;
+	[RPCEvent.GameSpectate]: unknown;
+	[RPCEvent.ActivityInvite]: unknown;
+	[RPCEvent.LobbyDelete]: unknown;
+	[RPCEvent.LobbyUpdate]: unknown;
+	[RPCEvent.LobbyMemberConnect]: unknown;
+	[RPCEvent.LobbyMemberDisconnect]: unknown;
+	[RPCEvent.LobbyMemberUpdate]: unknown;
+	[RPCEvent.LobbyMessage]: unknown;
+	[RPCEvent.CaptureShortcutChange]: unknown;
+	[RPCEvent.Overlay]: unknown;
+	[RPCEvent.OverlayUpdate]: unknown;
+	[RPCEvent.EntitlementCreate]: unknown;
+	[RPCEvent.EntitlementDelete]: unknown;
+	[RPCEvent.UserAchievementUpdate]: unknown;
 }
 
 export interface GuildStatusArguments {
