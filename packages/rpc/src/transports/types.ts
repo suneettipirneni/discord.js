@@ -9,7 +9,8 @@ import type {
 	APIMessage,
 	APIGuildChannel,
 	GatewayActivity,
-} from 'discord.js';
+	RESTPostOAuth2ClientCredentialsResult,
+} from 'discord-api-types/v10';
 
 export enum RPCCommand {
 	Dispatch = 'DISPATCH',
@@ -52,7 +53,21 @@ export enum RPCEvent {
 	MessageDelete = 'MESSAGE_DELETE',
 	NotificationCreate = 'NOTIFICATION_CREATE',
 	ActivityJoin = 'ACTIVITY_JOIN',
+	ActivitySpectate = 'ACTIVITY_SPECTATE',
 	ActivityJoinRequest = 'ACTIVITY_JOIN_REQUEST',
+}
+
+export enum VoiceConnectionStates {
+	Disconnected = 'DISCONNECTED',
+	AwaitingEndpoint = 'AWAITING_ENDPOINT',
+	Authenticating = 'AUTHENTICATING',
+	Connecting = 'CONNECTING',
+	Connected = 'CONNECTED',
+	VoiceDisconnected = 'VOICE_DISCONNECTED',
+	VoiceConnecting = 'VOICE_CONNECTING',
+	VoiceConnected = 'VOICE_CONNECTED',
+	NoRoute = 'NO_ROUTE',
+	IceChecking = 'ICE_CHECKING',
 }
 
 export interface BaseRPCPayload {
@@ -275,8 +290,14 @@ export interface DispatchRPCPayload extends BaseRPCPayload {
 	data: RPCDispatchData;
 }
 
-<<<<<<< Updated upstream
-export interface MappedArguments {
+export type RPCEventsWithArguments = {
+	[K in keyof typeof RPCEvent]: MappedRPCEventsArguments[typeof RPCEvent[K]] extends undefined
+		? never
+		: typeof RPCEvent[K];
+}[keyof typeof RPCEvent];
+
+export interface MappedRPCCommandsArguments<SubscribeEvent extends RPCEventsWithArguments = RPCEventsWithArguments> {
+	[RPCCommand.Dispatch]: undefined;
 	[RPCCommand.Authorize]: AuthorizeArguments;
 	[RPCCommand.Authenticate]: AuthenticateArguments;
 	[RPCCommand.GetGuild]: GetGuildArguments;
@@ -289,16 +310,14 @@ export interface MappedArguments {
 	[RPCCommand.SelectTextChannel]: SelectTextChannelArguments;
 	[RPCCommand.GetVoiceSettings]: undefined;
 	[RPCCommand.SetVoiceSettings]: GetVoiceSettingsResponseData;
-	// [RPCCommand.Subscribe]: SubscribeArguments;
-	// [RPCCommand.Unsubscribe]: UnsubscribeArguments;
+	[RPCCommand.Subscribe]: MappedRPCEventsArguments[SubscribeEvent];
+	[RPCCommand.Unsubscribe]: MappedRPCEventsArguments[SubscribeEvent];
 	[RPCCommand.SetCertifiedDevices]: SetCertifiedDevicesArguments;
 	[RPCCommand.SetActivity]: SetActivityArguments;
 	[RPCCommand.SendActivityJoinInvite]: SendActivityJoinInviteArguments;
 	[RPCCommand.CloseActivityRequest]: CloseActivityRequestArguments;
 }
 
-=======
->>>>>>> Stashed changes
 export type RPCArguments =
 	| AuthorizeArguments
 	| AuthenticateArguments
@@ -307,7 +326,12 @@ export type RPCArguments =
 	| GetChannelsArguments
 	| SetUserVoiceSettingsData
 	| SelectVoiceChannelArguments
-	| SelectVoiceChannelArguments;
+	| SelectTextChannelArguments
+	| GetVoiceSettingsResponseData
+	| SetCertifiedDevicesArguments
+	| SetActivityArguments
+	| SendActivityJoinInviteArguments
+	| CloseActivityRequestArguments;
 
 export type RPCResponseData =
 	| AuthorizeResponseData
@@ -329,15 +353,12 @@ export interface AuthorizeResponseData {
 	code: string;
 }
 
-<<<<<<< Updated upstream
 export interface AuthorizePayload extends BaseRPCPayload {
 	cmd: RPCCommand.Authorize;
 	args?: AuthorizeArguments;
 	data?: AuthorizeResponseData;
 }
 
-=======
->>>>>>> Stashed changes
 export interface AuthenticateArguments {
 	access_token: string;
 }
@@ -357,15 +378,12 @@ export interface AuthenticateResponseData {
 	application: RPCOAuthApplication;
 }
 
-<<<<<<< Updated upstream
 export interface AuthenticatePayload extends BaseRPCPayload {
 	cmd: RPCCommand.Authenticate;
 	args?: AuthenticateArguments;
 	data?: AuthenticateResponseData;
 }
 
-=======
->>>>>>> Stashed changes
 export interface GetGuildsResponseData {
 	guilds: Partial<APIGuild>[];
 }
@@ -387,15 +405,12 @@ export interface GetGuildResponseData {
 	members: Partial<APIGuildMember>[];
 }
 
-<<<<<<< Updated upstream
 export interface GetGuildPayload extends BaseRPCPayload {
 	cmd: RPCCommand.GetGuild;
 	args?: GetGuildArguments;
 	data?: GetGuildResponseData;
 }
 
-=======
->>>>>>> Stashed changes
 export interface GetChannelArguments {
 	channel_id: Snowflake;
 }
@@ -413,15 +428,12 @@ export interface GetChannelResponseData {
 	messages: APIMessage[];
 }
 
-<<<<<<< Updated upstream
 export interface GetChannelPayload extends BaseRPCPayload {
 	cmd: RPCCommand.GetChannel;
 	args?: GetChannelArguments;
 	data?: GetChannelResponseData;
 }
 
-=======
->>>>>>> Stashed changes
 export interface GetChannelsArguments {
 	guild_id: Snowflake;
 }
@@ -430,15 +442,12 @@ export interface GetChannelsResponseData {
 	channels: Partial<APIGuildChannel<ChannelType>>[];
 }
 
-<<<<<<< Updated upstream
 export interface GetChannelsPayload extends BaseRPCPayload {
 	cmd: RPCCommand.GetChannels;
 	args?: GetChannelsArguments;
 	data?: GetChannelsResponseData;
 }
 
-=======
->>>>>>> Stashed changes
 export interface Pan {
 	left: number;
 	right: number;
@@ -451,22 +460,18 @@ export interface SetUserVoiceSettingsData {
 	mute?: boolean;
 }
 
-<<<<<<< Updated upstream
 export interface SetUserVoiceSettingsPayload extends BaseRPCPayload {
 	cmd: RPCCommand.SetUserVoiceSettings;
 	data?: SetUserVoiceSettingsData;
 	args?: SetUserVoiceSettingsData;
 }
 
-=======
->>>>>>> Stashed changes
 export interface SelectVoiceChannelArguments {
 	channel_id: Snowflake;
 	timeout: number;
 	force: boolean;
 }
 
-<<<<<<< Updated upstream
 export interface SelectVoiceChannelPayload extends BaseRPCPayload {
 	cmd: RPCCommand.SelectVoiceChannel;
 	args?: SelectVoiceChannelArguments;
@@ -477,21 +482,16 @@ export interface GetSelectedVoiceChannelPayload extends BaseRPCPayload {
 	data?: GetChannelResponseData;
 }
 
-=======
->>>>>>> Stashed changes
 export interface SelectTextChannelArguments {
 	channel_id: Snowflake;
 	timeout: number;
 }
 
-<<<<<<< Updated upstream
 export interface SelectTextChannelPayload extends BaseRPCPayload {
 	cmd: RPCCommand.SelectTextChannel;
 	args?: SelectTextChannelArguments;
 }
 
-=======
->>>>>>> Stashed changes
 export enum KeyType {
 	KeyboardKey = 'KEYBOARD_KEY',
 	MouseButton = 'MOUSE_BUTTON',
@@ -543,7 +543,6 @@ export interface GetVoiceSettingsResponseData {
 	mute: boolean;
 }
 
-<<<<<<< Updated upstream
 export interface GetVoiceSettingsPayload extends BaseRPCPayload {
 	cmd: RPCCommand.GetVoiceSettings;
 	data?: GetVoiceSettingsResponseData;
@@ -555,31 +554,28 @@ export interface SetVoiceSettingsPayload extends BaseRPCPayload {
 	args?: GetVoiceSettingsResponseData;
 }
 
-=======
->>>>>>> Stashed changes
 export interface SubscribeResponseData {
 	evt: RPCEvent;
 }
 
-<<<<<<< Updated upstream
-export interface SubscribePayload extends BaseRPCPayload {
-	evt: RPCEvent;
+export interface SubscribePayload<
+	T extends Exclude<RPCEvent, RPCEvent.Ready | RPCEvent.Error> = Exclude<RPCEvent, RPCEvent.Ready | RPCEvent.Error>,
+> extends BaseRPCPayload {
+	evt: T;
 	cmd: RPCCommand.Subscribe;
-	// TODO: event arg types
-	args: any;
+	args: MappedRPCDispatchData[T];
 	data?: SubscribeResponseData;
 }
 
-export interface UnsubscribePayload extends BaseRPCPayload {
+export interface UnsubscribePayload<
+	T extends Exclude<RPCEvent, RPCEvent.Ready | RPCEvent.Error> = Exclude<RPCEvent, RPCEvent.Ready | RPCEvent.Error>,
+> extends BaseRPCPayload {
 	cmd: RPCCommand.Unsubscribe;
-	evt: RPCEvent;
-	// TODO: event arg types
-	args: any;
+	evt: T;
+	args: MappedRPCDispatchData[T];
 	data?: SubscribeResponseData;
 }
 
-=======
->>>>>>> Stashed changes
 export enum DeviceType {
 	AudioInput = 'audioinput',
 	AudioOutput = 'audiooutput',
@@ -622,58 +618,89 @@ export interface SetCertifiedDevicesArguments {
 	devices: Device[];
 }
 
-<<<<<<< Updated upstream
 export interface SetCertifiedDevicesPayload extends BaseRPCPayload {
 	cmd: RPCCommand.SetCertifiedDevices;
 	args?: SetCertifiedDevicesArguments;
 }
 
-=======
->>>>>>> Stashed changes
 export interface SetActivityArguments {
 	pid: number;
 	activity: GatewayActivity;
 }
 
-<<<<<<< Updated upstream
 export interface SetActivityPayload extends BaseRPCPayload {
 	cmd: RPCCommand.SetActivity;
 	args?: SetActivityArguments;
 }
 
-=======
->>>>>>> Stashed changes
 export interface SendActivityJoinInviteArguments {
 	user_id: Snowflake;
 }
 
-<<<<<<< Updated upstream
 export interface SendActivityJoinInvitePayload extends BaseRPCPayload {
 	cmd: RPCCommand.SendActivityJoinInvite;
 	args?: SendActivityJoinInviteArguments;
 }
 
-=======
->>>>>>> Stashed changes
 export interface CloseActivityRequestArguments {
 	user_id: Snowflake;
 }
 
-<<<<<<< Updated upstream
 export interface CloseActivityRequestPayload extends BaseRPCPayload {
 	cmd: RPCCommand.CloseActivityRequest;
 	args?: CloseActivityRequestArguments;
 }
 
-=======
->>>>>>> Stashed changes
 export interface RPCServerConfiguration {
 	cdn_host: string;
 	api_endpoint: string;
 	environment: string;
 }
 
-export type RPCDispatchData = ReadyDispatchData | ErrorDispatchData | GuildStatusDispatchData;
+export type RPCDispatchData =
+	| ReadyDispatchData
+	| ErrorDispatchData
+	| GuildStatusDispatchData
+	| GuildCreateDispatchData
+	| ChannelCreateDispatchData
+	| VoiceChannelSelectDispatchData
+	| VoiceSettingsUpdateDispatchData
+	| VoiceStateCreateDispatchData
+	| VoiceStateUpdateDispatchData
+	| VoiceStateDeleteDispatchData
+	| VoiceConnectionStatusDispatchData
+	| MessageCreateDispatchData
+	| MessageUpdateDispatchData
+	| MessageDeleteDispatchData
+	| SpeakingStartDispatchData
+	| SpeakingStopDispatchData
+	| NotificationCreateDispatchData
+	| ActivityJoinDispatchData
+	| ActivitySpectateDispatchData
+	| ActivityJoinRequestDispatchData;
+
+export interface MappedRPCDispatchData {
+	[RPCEvent.Ready]: ReadyDispatchData;
+	[RPCEvent.Error]: ErrorDispatchData;
+	[RPCEvent.GuildStatus]: GuildStatusDispatchData;
+	[RPCEvent.GuildCreate]: GuildCreateDispatchData;
+	[RPCEvent.ChannelCreate]: ChannelCreateDispatchData;
+	[RPCEvent.VoiceChannelSelect]: VoiceChannelSelectDispatchData;
+	[RPCEvent.VoiceSettingsUpdate]: VoiceSettingsUpdateDispatchData;
+	[RPCEvent.VoiceStateCreate]: VoiceStateCreateDispatchData;
+	[RPCEvent.VoiceStateUpdate]: VoiceStateUpdateDispatchData;
+	[RPCEvent.VoiceStateDelete]: VoiceStateDeleteDispatchData;
+	[RPCEvent.VoiceConnectionStatus]: VoiceConnectionStatusDispatchData;
+	[RPCEvent.MessageCreate]: MessageCreateDispatchData;
+	[RPCEvent.MessageUpdate]: MessageUpdateDispatchData;
+	[RPCEvent.MessageDelete]: MessageDeleteDispatchData;
+	[RPCEvent.SpeakingStart]: SpeakingStartDispatchData;
+	[RPCEvent.SpeakingStop]: SpeakingStopDispatchData;
+	[RPCEvent.NotificationCreate]: NotificationCreateDispatchData;
+	[RPCEvent.ActivityJoin]: ActivityJoinDispatchData;
+	[RPCEvent.ActivitySpectate]: ActivitySpectateDispatchData;
+	[RPCEvent.ActivityJoinRequest]: ActivityJoinRequestDispatchData;
+}
 
 export interface ReadyDispatchData {
 	v: number;
@@ -689,3 +716,144 @@ export interface ErrorDispatchData {
 export interface GuildStatusDispatchData {
 	guild_id: Snowflake;
 }
+
+export interface GuildCreateDispatchData {
+	id: string;
+	name: string;
+}
+
+export interface ChannelCreateDispatchData {
+	id: string;
+	name: string;
+	type: ChannelType.GuildText | ChannelType.GuildVoice | ChannelType.DM | ChannelType.GroupDM;
+}
+
+export interface VoiceChannelSelectDispatchData {
+	channel_id: string | null;
+	guild_id: string | null;
+}
+
+export type VoiceSettingsUpdateDispatchData = GetVoiceSettingsResponseData;
+
+export interface VoiceStateCreateDispatchData {
+	voice_state: {
+		mute: boolean;
+		deaf: boolean;
+		self_mute: boolean;
+		self_deaf: boolean;
+		suppress: boolean;
+	};
+	user: APIUser;
+	nick: string;
+	volume: number;
+	mute: boolean;
+	pan: {
+		left: number;
+		right: number;
+	};
+}
+
+export type VoiceStateUpdateDispatchData = VoiceStateCreateDispatchData;
+
+export type VoiceStateDeleteDispatchData = VoiceStateCreateDispatchData;
+
+export interface VoiceConnectionStatusDispatchData {
+	state: VoiceConnectionStates;
+	hostname: string;
+	pings: number[];
+	average_ping: number;
+	last_ping: number;
+}
+
+export type MessageCreateDispatchData = APIMessage;
+
+export type MessageUpdateDispatchData = APIMessage;
+
+export interface MessageDeleteDispatchData {
+	id: Snowflake;
+}
+
+export interface SpeakingStartDispatchData {
+	user_id: Snowflake;
+}
+
+export type SpeakingStopDispatchData = SpeakingStartDispatchData;
+
+export interface NotificationCreateDispatchData {
+	channel_id: Snowflake;
+	message: APIMessage;
+	icon_url: string;
+	title: string;
+	body: string;
+}
+
+export interface ActivityJoinDispatchData {
+	/**
+	 * the [join_secret](https://discord.com/developers/docs/rich-presence/how-to#updating-presence-update-presence-payload-fields) for the given invite
+	 */
+	secret: string;
+}
+
+export interface ActivitySpectateDispatchData {
+	/**
+	 * the [spectate_secret](https://discord.com/developers/docs/rich-presence/how-to#updating-presence-update-presence-payload-fields) for the given invite
+	 */
+	secret: string;
+}
+
+export interface ActivityJoinRequestDispatchData {
+	user: APIUser;
+}
+
+export interface MappedRPCEventsArguments {
+	[RPCEvent.Ready]: undefined;
+	[RPCEvent.Error]: undefined;
+	[RPCEvent.GuildStatus]: GuildStatusArguments;
+	[RPCEvent.GuildCreate]: undefined;
+	[RPCEvent.ChannelCreate]: undefined;
+	[RPCEvent.VoiceChannelSelect]: undefined;
+	[RPCEvent.VoiceSettingsUpdate]: undefined;
+	[RPCEvent.VoiceStateCreate]: VoiceStateCreateArguments;
+	[RPCEvent.VoiceStateUpdate]: VoiceStateUpdateArguments;
+	[RPCEvent.VoiceStateDelete]: VoiceStateDeleteArguments;
+	[RPCEvent.VoiceConnectionStatus]: undefined;
+	[RPCEvent.MessageCreate]: MessageCreateArguments;
+	[RPCEvent.MessageUpdate]: MessageUpdateArguments;
+	[RPCEvent.MessageDelete]: MessageDeleteArguments;
+	[RPCEvent.SpeakingStart]: SpeakingStartArguments;
+	[RPCEvent.SpeakingStop]: SpeakingStopArguments;
+	[RPCEvent.NotificationCreate]: undefined;
+	[RPCEvent.ActivityJoin]: undefined;
+	[RPCEvent.ActivitySpectate]: undefined;
+	[RPCEvent.ActivityJoinRequest]: undefined;
+}
+
+export interface GuildStatusArguments {
+	guild_id: Snowflake;
+}
+
+export interface VoiceStateCreateArguments {
+	channel_id: Snowflake;
+}
+
+export type VoiceStateUpdateArguments = VoiceStateCreateArguments;
+
+export type VoiceStateDeleteArguments = VoiceStateCreateArguments;
+
+export interface MessageCreateArguments {
+	channel_id: Snowflake;
+}
+
+export type MessageUpdateArguments = MessageCreateArguments;
+
+export type MessageDeleteArguments = MessageCreateArguments;
+
+export interface SpeakingStartArguments {
+	channel_id: Snowflake;
+}
+
+export type SpeakingStopArguments = SpeakingStartArguments;
+
+export type RESTPostOAuth2RPCClientCredentialsResult = Omit<RESTPostOAuth2ClientCredentialsResult, 'access_token'> & {
+	rpc_token: string;
+};
