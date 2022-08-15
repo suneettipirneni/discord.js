@@ -2,8 +2,8 @@ import net, { type Socket } from 'net';
 import { EventEmitter } from 'node:events';
 import { fetch } from 'undici';
 import type { Transport } from './index';
-import type { RPCPayload, RPCResponsePayload } from './types';
 import type { RPCClient } from '../client';
+import type { RPCPayload, RPCResponsePayload } from '../typings/payloads';
 import { uuid } from '../util';
 
 enum OPCodes {

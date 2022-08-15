@@ -16,7 +16,6 @@ pids
 
 # Dist
 dist/
-typings/
 docs/**/*
 !docs/index.json
 !docs/README.md
