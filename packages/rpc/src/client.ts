@@ -2,28 +2,31 @@ import { EventEmitter } from 'node:events';
 import { setTimeout, clearTimeout } from 'timers';
 import { APIUser, OAuth2Scopes, RESTPostOAuth2ClientCredentialsResult, Routes, Snowflake } from 'discord-api-types/v10';
 import { fetch } from 'undici';
-import { LobbyTypes, RelationShip, RelationshipTypes } from './constants';
 import { transports } from './transports';
-import {
-	AuthenticateResponseData,
-	AuthorizeResponseData,
-	GetChannelResponseData,
-	GetChannelsResponseData,
-	GetGuildResponseData,
-	GetGuildsResponseData,
-	GetVoiceSettingsResponseData,
+import type {
 	MappedRPCCommandsArguments,
-	RESTPostOAuth2RPCClientCredentialsResult,
 	RPCArguments,
-	RPCCommand,
-	RPCEvent,
-	RPCOAuthApplication,
 	SelectTextChannelArguments,
 	SelectVoiceChannelArguments,
 	SetActivityArguments,
 	SetCertifiedDevicesArguments,
+} from './typings/arguments';
+import type {
+	AuthenticatePayloadData,
+	AuthorizePayloadData,
+	GetChannelPayloadData,
+	GetChannelsPayloadData,
+	GetGuildPayloadData,
+	GetGuildsPayloadData,
+	GetVoiceSettingsPayloadData,
+} from './typings/payloaddata';
+import type {
+	RPCOAuthApplication,
+	RESTPostOAuth2RPCClientCredentialsResult,
 	SetUserVoiceSettingsData,
-} from './transports/types';
+	RelationShip,
+} from './typings/structs';
+import { RPCCommands, RPCEvents, type LobbyType, RelationshipType } from './typings/types';
 import { pid as getPid, uuid } from './util';
 
 // TODO: lots of errors and (maybe) unneeded functions to take care of
@@ -223,10 +226,10 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 * @private
 	 */
-	public request<T extends RPCCommand = RPCCommand>(
+	public request<T extends RPCCommands = RPCCommands>(
 		cmd: T,
 		args?: MappedRPCCommandsArguments[T],
-		event?: RPCEvent,
+		event?: RPCEvents,
 	): Promise<unknown> {
 		return new Promise((resolve, reject) => {
 			const nonce = uuid();
@@ -241,8 +244,8 @@ export class RPCClient extends EventEmitter {
 	 * @param {Object} message message
 	 * @private
 	 */
-	private _onRpcMessage(message: { cmd: RPCCommand; evt: string; data: Record<string, unknown>; nonce: string }) {
-		if (message.cmd === RPCCommand.Dispatch && message.evt === RPCEvent.Ready) {
+	private _onRpcMessage(message: { cmd: RPCCommands; evt: string; data: Record<string, unknown>; nonce: string }) {
+		if (message.cmd === RPCCommands.Dispatch && message.evt === RPCEvents.Ready) {
 			if (message.data.user) {
 				this.user = message.data.user as Partial<APIUser>;
 			}
@@ -292,12 +295,12 @@ export class RPCClient extends EventEmitter {
 			rpcToken = body.rpc_token;
 		}
 
-		const { code } = (await this.request(RPCCommand.Authorize, {
+		const { code } = (await this.request(RPCCommands.Authorize, {
 			scopes,
 			client_id: this.clientId!,
 			rpc_token: rpcToken as string,
 			username,
-		})) as AuthorizeResponseData;
+		})) as AuthorizePayloadData;
 
 		const response = (await this.fetch('POST', Routes.oauth2TokenExchange(), {
 			data: new URLSearchParams({
@@ -320,7 +323,7 @@ export class RPCClient extends EventEmitter {
 	 */
 	public authenticate(accessToken: string): Promise<RPCClient> {
 		return (
-			this.request(RPCCommand.Authenticate, { access_token: accessToken }) as Promise<AuthenticateResponseData>
+			this.request(RPCCommands.Authenticate, { access_token: accessToken }) as Promise<AuthenticatePayloadData>
 		).then(({ application, user }) => {
 			this.accessToken = accessToken;
 			this.application = application;
@@ -333,38 +336,38 @@ export class RPCClient extends EventEmitter {
 	/**
 	 * Fetch a guild
 	 * @param {Snowflake} id Guild ID
-	 * @returns {Promise<GetGuildResponseData>}
+	 * @returns {Promise<GetGuildPayloadData>}
 	 */
-	public getGuild(id: Snowflake): Promise<GetGuildResponseData> {
-		return this.request(RPCCommand.GetGuild, { guild_id: id }) as Promise<GetGuildResponseData>;
+	public getGuild(id: Snowflake): Promise<GetGuildPayloadData> {
+		return this.request(RPCCommands.GetGuild, { guild_id: id }) as Promise<GetGuildPayloadData>;
 	}
 
 	/**
 	 * Fetch all guilds
-	 * @returns {Promise<GetGuildsResponseData['guilds']>}
+	 * @returns {Promise<GetGuildsPayloadData['guilds']>}
 	 */
-	public getGuilds(): Promise<GetGuildsResponseData['guilds']> {
-		return this.request(RPCCommand.GetGuilds) as Promise<GetGuildsResponseData['guilds']>;
+	public getGuilds(): Promise<GetGuildsPayloadData['guilds']> {
+		return this.request(RPCCommands.GetGuilds) as Promise<GetGuildsPayloadData['guilds']>;
 	}
 
 	/**
 	 * Get a channel
 	 * @param {Snowflake} id Channel ID
-	 * @returns {Promise<GetChannelResponseData>}
+	 * @returns {Promise<GetChannelPayloadData>}
 	 */
-	public getChannel(id: Snowflake): Promise<GetChannelResponseData> {
-		return this.request(RPCCommand.GetChannel, { channel_id: id }) as Promise<GetChannelResponseData>;
+	public getChannel(id: Snowflake): Promise<GetChannelPayloadData> {
+		return this.request(RPCCommands.GetChannel, { channel_id: id }) as Promise<GetChannelPayloadData>;
 	}
 
 	/**
 	 * Get all channels
 	 * @param {Snowflake} [id] Guild ID
-	 * @returns {Promise<GetChannelsResponseData['channels']>}
+	 * @returns {Promise<GetChannelsPayloadData['channels']>}
 	 */
-	public async getChannels(id: Snowflake): Promise<GetChannelsResponseData['channels']> {
-		const { channels } = (await this.request(RPCCommand.GetChannels, {
+	public async getChannels(id: Snowflake): Promise<GetChannelsPayloadData['channels']> {
+		const { channels } = (await this.request(RPCCommands.GetChannels, {
 			guild_id: id,
-		})) as GetChannelsResponseData;
+		})) as GetChannelsPayloadData;
 		return channels;
 	}
 
@@ -391,7 +394,7 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 */
 	public setCertifiedDevices(devices: SetCertifiedDevicesArguments['devices']) {
-		return this.request(RPCCommand.SetCertifiedDevices, { devices });
+		return this.request(RPCCommands.SetCertifiedDevices, { devices });
 	}
 
 	/**
@@ -409,7 +412,7 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 */
 	public setUserVoiceSettings(settings: SetUserVoiceSettingsData) {
-		return this.request(RPCCommand.SetUserVoiceSettings, settings);
+		return this.request(RPCCommands.SetUserVoiceSettings, settings);
 	}
 
 	/**
@@ -419,17 +422,17 @@ export class RPCClient extends EventEmitter {
 	 * @param {number} [options.timeout] Timeout for the command
 	 * @param {boolean} [options.force] Force this move. This should only be done if you
 	 * have explicit permission from the user.
-	 * @returns {Promise<GetChannelResponseData | null>}
+	 * @returns {Promise<GetChannelPayloadData | null>}
 	 */
 	public selectVoiceChannel(
 		id: Snowflake,
 		args: Omit<SelectVoiceChannelArguments, 'channel_id'>,
-	): Promise<GetChannelResponseData | null> {
-		return this.request(RPCCommand.SelectVoiceChannel, {
+	): Promise<GetChannelPayloadData | null> {
+		return this.request(RPCCommands.SelectVoiceChannel, {
 			channel_id: id,
 			timeout: args.timeout!,
 			force: 'force' in args ? args.force : false,
-		}) as Promise<GetChannelResponseData | null>;
+		}) as Promise<GetChannelPayloadData | null>;
 	}
 
 	/**
@@ -437,34 +440,34 @@ export class RPCClient extends EventEmitter {
 	 * @param {SelectTextChannelArguments} [args] select text channel arguments
 	 *
 	 * have explicit permission from the user.
-	 * @returns {Promise<GetChannelResponseData | null>}
+	 * @returns {Promise<GetChannelPayloadData | null>}
 	 */
 	public selectTextChannel(
 		id: Snowflake | null,
 		args: Omit<SelectTextChannelArguments, 'channel_id'>,
-	): Promise<GetChannelResponseData | null> {
-		return this.request(RPCCommand.SelectTextChannel, {
+	): Promise<GetChannelPayloadData | null> {
+		return this.request(RPCCommands.SelectTextChannel, {
 			channel_id: id,
 			timeout: args.timeout!,
-		}) as Promise<GetChannelResponseData | null>;
+		}) as Promise<GetChannelPayloadData | null>;
 	}
 
 	/**
 	 * Get current voice settings
-	 * @returns {Promise<GetVoiceSettingsResponseData>}
+	 * @returns {Promise<GetVoiceSettingsPayloadData>}
 	 */
-	public getVoiceSettings(): Promise<GetVoiceSettingsResponseData> {
-		return this.request(RPCCommand.GetVoiceSettings).then((s) => s as GetVoiceSettingsResponseData);
+	public getVoiceSettings(): Promise<GetVoiceSettingsPayloadData> {
+		return this.request(RPCCommands.GetVoiceSettings).then((s) => s as GetVoiceSettingsPayloadData);
 	}
 
 	/**
 	 * Set current voice settings, overriding the current settings until this session disconnects.
 	 * This also locks the settings for any other rpc sessions which may be connected.
-	 * @param {GetVoiceSettingsResponseData} args Settings
+	 * @param {GetVoiceSettingsPayloadData} args Settings
 	 * @returns {Promise}
 	 */
-	public setVoiceSettings(args: GetVoiceSettingsResponseData): Promise<unknown> {
-		return this.request(RPCCommand.SetVoiceSettings, args);
+	public setVoiceSettings(args: GetVoiceSettingsPayloadData): Promise<unknown> {
+		return this.request(RPCCommands.SetVoiceSettings, args);
 	}
 
 	/**
@@ -476,15 +479,15 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise<Function>}
 	 */
 	public captureShortcut(callback: (key: string, stop: () => Promise<unknown>) => void) {
-		const subid = subKey(RPCEvent.CaptureShortcutChange);
+		const subid = subKey(RPCEvents.CaptureShortcutChange);
 		const stop = () => {
 			this._subscriptions.delete(subid);
-			return this.request(RPCCommand.CaptureShortcut, { action: 'STOP' });
+			return this.request(RPCCommands.CaptureShortcut, { action: 'STOP' });
 		};
 		this._subscriptions.set(subid, ({ shortcut }) => {
 			callback(shortcut, stop);
 		});
-		return this.request(RPCCommand.CaptureShortcut, { action: 'START' }).then(() => stop);
+		return this.request(RPCCommands.CaptureShortcut, { action: 'START' }).then(() => stop);
 	}
 
 	/**
@@ -510,7 +513,7 @@ export class RPCClient extends EventEmitter {
 			}
 		}
 
-		return this.request(RPCCommand.SetActivity, {
+		return this.request(RPCCommands.SetActivity, {
 			pid: pid!,
 			activity,
 		});
@@ -523,7 +526,7 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 */
 	public clearActivity(pid: number = getPid()!): Promise<unknown> {
-		return this.request(RPCCommand.SetActivity, {
+		return this.request(RPCCommands.SetActivity, {
 			pid,
 		});
 	}
@@ -534,7 +537,7 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 */
 	public sendJoinInvite(user_id: string): Promise<unknown> {
-		return this.request(RPCCommand.SendActivityJoinInvite, {
+		return this.request(RPCCommands.SendActivityJoinInvite, {
 			user_id,
 		});
 	}
@@ -545,7 +548,7 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 */
 	public sendJoinRequest(id: Snowflake): Promise<unknown> {
-		return this.request(RPCCommand.CloseActivityJoinRequest, {
+		return this.request(RPCCommands.CloseActivityJoinRequest, {
 			user_id: id,
 		});
 	}
@@ -556,13 +559,13 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 */
 	public closeJoinRequest(user_id: string): Promise<unknown> {
-		return this.request(RPCCommand.CloseActivityRequest, {
+		return this.request(RPCCommands.CloseActivityRequest, {
 			user_id,
 		});
 	}
 
-	public createLobby(type: LobbyTypes, capacity: number, metadata: { key: string; value: string }): Promise<unknown> {
-		return this.request(RPCCommand.CreateLobby, {
+	public createLobby(type: LobbyType, capacity: number, metadata: { key: string; value: string }): Promise<unknown> {
+		return this.request(RPCCommands.CreateLobby, {
 			type,
 			capacity,
 			metadata,
@@ -576,9 +579,9 @@ export class RPCClient extends EventEmitter {
 			owner_id,
 			capacity,
 			metadata,
-		}: Partial<{ type: LobbyTypes; owner_id: number; capacity: number; metadata: { key: string; value: string } }>,
+		}: Partial<{ type: LobbyType; owner_id: number; capacity: number; metadata: { key: string; value: string } }>,
 	) {
-		return this.request(RPCCommand.UpdateLobby, {
+		return this.request(RPCCommands.UpdateLobby, {
 			id,
 			type,
 			owner_id,
@@ -588,13 +591,13 @@ export class RPCClient extends EventEmitter {
 	}
 
 	public deleteLobby(id: number): Promise<unknown> {
-		return this.request(RPCCommand.DeleteLobby, {
+		return this.request(RPCCommands.DeleteLobby, {
 			id,
 		});
 	}
 
 	public connectToLobby(id: number, secret: string): Promise<unknown> {
-		return this.request(RPCCommand.ConnectToLobby, {
+		return this.request(RPCCommands.ConnectToLobby, {
 			id,
 			secret,
 		});
@@ -607,20 +610,20 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise}
 	 */
 	public sendToLobby(id: number, data: ArrayBuffer): Promise<unknown> {
-		return this.request(RPCCommand.SendToLobby, {
+		return this.request(RPCCommands.SendToLobby, {
 			id,
 			data,
 		});
 	}
 
 	public disconnectFromLobby(id: number): Promise<unknown> {
-		return this.request(RPCCommand.DisconnectFromLobby, {
+		return this.request(RPCCommands.DisconnectFromLobby, {
 			id,
 		});
 	}
 
 	public updateLobbyMember(id: number, user: Snowflake, metadata: { key: string; value: string }): Promise<unknown> {
-		return this.request(RPCCommand.UpdateLobbyMember, {
+		return this.request(RPCCommands.UpdateLobbyMember, {
 			lobby_id: id,
 			user_id: user,
 			metadata,
@@ -629,8 +632,8 @@ export class RPCClient extends EventEmitter {
 
 	public getRelationships() {
 		// why does get the keys and attempts to index them from the request?
-		const types = Object.keys(RelationshipTypes);
-		return (this.request(RPCCommand.GetRelationships) as Promise<{ relationships: RelationShip[] }>).then((o) =>
+		const types = Object.keys(RelationshipType);
+		return (this.request(RPCCommands.GetRelationships) as Promise<{ relationships: RelationShip[] }>).then((o) =>
 			o.relationships.map((r) => ({
 				...r,
 				type: types[r.type],
@@ -644,10 +647,10 @@ export class RPCClient extends EventEmitter {
 	 * @param {RPCArguments} [args] Args for event e.g. `{ channel_id: '1234' }`
 	 * @returns {Promise<Object>}
 	 */
-	public async subscribe(event: RPCEvent, args: RPCArguments): Promise<object> {
-		await this.request(RPCCommand.Subscribe, args, event);
+	public async subscribe(event: RPCEvents, args: RPCArguments): Promise<object> {
+		await this.request(RPCCommands.Subscribe, args, event);
 		return {
-			unsubscribe: () => this.request(RPCCommand.Unsubscribe, args, event),
+			unsubscribe: () => this.request(RPCCommands.Unsubscribe, args, event),
 		};
 	}
 
