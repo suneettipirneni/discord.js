@@ -2,7 +2,7 @@ import { EventEmitter } from 'node:events';
 import type { default as WebSocketType } from 'ws';
 import type { Transport } from './index';
 import type { RPCClient } from '../client';
-import { browser } from '../constants';
+import { browser } from '../index';
 
 type WebSocketConstructor = new (url: string, options?: WebSocketType.ClientOptions) => WebSocketType;
 
