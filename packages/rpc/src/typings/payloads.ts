@@ -36,7 +36,7 @@ export interface RPCCommandResponsePayload extends BaseRPCPayload {
 	nonce: string;
 }
 
-// ----- BEGIN RPC RESPONSE TYPES -----
+// ----- BEGIN RPC COMMAND RESPONSE TYPES -----
 
 export type RPCResponsePayload =
 	| RPCAuthorizeResponsePayload
@@ -55,7 +55,7 @@ export type RPCResponsePayload =
 	| RPCCloseActivityRequestResponsePayload;
 
 export interface BaseRPCServerResponsePayload extends BaseRPCPayload {
-	args: never;
+	nonce: string;
 	evt?: RPCEvents;
 }
 
@@ -134,9 +134,9 @@ export interface RPCCloseActivityRequestResponsePayload extends BaseRPCServerRes
 	data: undefined;
 }
 
-// ----- END RPC RESPONSE TYPES -----
+// ----- END RPC COMMAND RESPONSE TYPES -----
 
-// ----- BEGIN RPC REQUEST TYPES -----
+// ----- BEGIN RPC COMMAND REQUEST TYPES -----
 
 export type RPCCommandPayload =
 	| RPCAuthorizeCommandRequestPayload
@@ -355,4 +355,22 @@ export interface CloseActivityRequestPayload extends BaseRPCPayload {
 	args?: CloseActivityRequestArguments;
 }
 
-// ----- END RPC REQUEST TYPES -----
+// ----- END RPC COMMAND REQUEST TYPES -----
+
+// ----- BEGIN RPC EVENT PAYLOADS -----
+
+export interface RPCEventPayload<T extends RPCEvents = RPCEvents> {
+	nonce: string;
+	cmd: RPCCommands;
+	data: MappedRPCDispatchData[T];
+	evt: T;
+}
+
+export type RPCClientEvents = {
+	[K in RPCEvents]: [RPCEventPayload<K>['data']];
+} & {
+	connected: [];
+	disconnected: [];
+};
+
+// ----- END RPC EVENT PAYLOADS -----

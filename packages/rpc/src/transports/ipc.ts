@@ -4,6 +4,7 @@ import { fetch } from 'undici';
 import type { Transport } from './index';
 import type { RPCClient } from '../client';
 import type { RPCPayload, RPCResponsePayload } from '../typings/payloads';
+import { RPCCommands, RPCEvents } from '../typings/types';
 import { uuid } from '../util';
 
 enum OPCodes {
@@ -142,13 +143,14 @@ class IPCTransport extends EventEmitter implements Transport {
 							return;
 						}
 
-						if (data.cmd === 'AUTHORIZE' && data.evt !== 'ERROR') {
+						if (data.cmd === RPCCommands.Authorize && data.evt !== RPCEvents.Error) {
 							findEndpoint()
 								.then((endpoint) => {
 									this.client.updateEndpoint(endpoint);
 								})
 								.catch((e) => {
-									this.client.emit('error', e);
+									// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+									this.client.emit(RPCEvents.Error, e);
 								});
 						}
 						this.emit('message', data);

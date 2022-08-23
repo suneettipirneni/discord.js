@@ -11,8 +11,8 @@ import type {
 	SetActivityArguments,
 	SetCertifiedDevicesArguments,
 } from './typings/arguments';
+import type { MappedRPCDispatchData } from './typings/dispatchdata';
 import type {
-	AuthenticatePayloadData,
 	AuthorizePayloadData,
 	GetChannelPayloadData,
 	GetChannelsPayloadData,
@@ -20,6 +20,7 @@ import type {
 	GetGuildsPayloadData,
 	GetVoiceSettingsPayloadData,
 } from './typings/payloaddata';
+import type { RPCAuthenticateResponsePayload, RPCClientEvents, RPCEventPayload } from './typings/payloads';
 import type {
 	RPCOAuthApplication,
 	RESTPostOAuth2RPCClientCredentialsResult,
@@ -28,8 +29,6 @@ import type {
 } from './typings/structs';
 import { RPCCommands, RPCEvents, type LobbyType, RelationshipType } from './typings/types';
 import { pid as getPid, uuid } from './util';
-
-// TODO: lots of errors and (maybe) unneeded functions to take care of
 
 function subKey(event: string, args?: unknown[]) {
 	return `${event}${JSON.stringify(args)}`;
@@ -60,7 +59,7 @@ export interface RPCLoginOptions {
 
 /**
  * The main hub for interacting with Discord RPC
- * @extends {BaseClient}
+ * @extends {EventEmitter}
  */
 export class RPCClient extends EventEmitter {
 	public readonly options: RPCClientOptions;
@@ -73,6 +72,21 @@ export class RPCClient extends EventEmitter {
 		path: string,
 		options?: { data: URLSearchParams; query?: Record<string, string> },
 	) => Promise<unknown>;
+
+	public override on!: <K extends RPCEvents | 'connected' | 'disconnected'>(
+		event: K,
+		listener: (...args: RPCClientEvents[K]) => void,
+	) => this;
+
+	public override once!: <K extends RPCEvents | 'connected' | 'disconnected'>(
+		event: K,
+		listener: (...args: RPCClientEvents[K]) => void,
+	) => this;
+
+	public override emit!: <K extends RPCEvents | 'connected' | 'disconnected'>(
+		event: K,
+		...args: RPCClientEvents[K]
+	) => boolean;
 
 	private endpoint = 'https://discord.com/api';
 	private readonly transport: Class<typeof transports[keyof typeof transports]>;
@@ -207,9 +221,9 @@ export class RPCClient extends EventEmitter {
 	 * @returns {Promise<RPCClient>}
 	 */
 	public async login(options?: RPCLoginOptions): Promise<RPCClient> {
-		await this.connect(options?.clientId ?? '');
+		const data = await this.connect(options?.clientId ?? '');
 		if (!options?.scopes) {
-			this.emit('ready');
+			this.emit(RPCEvents.Ready, data as MappedRPCDispatchData[RPCEvents.Ready]);
 			return this;
 		}
 		if (!options.accessToken) {
@@ -244,18 +258,19 @@ export class RPCClient extends EventEmitter {
 	 * @param {Object} message message
 	 * @private
 	 */
-	private _onRpcMessage(message: { cmd: RPCCommands; evt: string; data: Record<string, unknown>; nonce: string }) {
+	private _onRpcMessage(message: RPCEventPayload) {
 		if (message.cmd === RPCCommands.Dispatch && message.evt === RPCEvents.Ready) {
-			if (message.data.user) {
-				this.user = message.data.user as Partial<APIUser>;
-			}
+			this.user = (message.data as MappedRPCDispatchData[RPCEvents.Ready]).user;
 			this.emit('connected');
 		} else if (this._expecting.has(message.nonce)) {
 			const { resolve, reject } = this._expecting.get(message.nonce)!;
-			if (message.evt === 'ERROR') {
-				const e = new Error(message.data.message as string) as Error & { code: string; data: Record<string, unknown> };
-				e.code = message.data.code as string;
-				e.data = message.data;
+			if (message.evt === RPCEvents.Error) {
+				const e = new Error((message.data as MappedRPCDispatchData[RPCEvents.Error]).message) as Error & {
+					code: number;
+					data: MappedRPCDispatchData[RPCEvents.Error];
+				};
+				e.code = (message.data as MappedRPCDispatchData[RPCEvents.Error]).code;
+				e.data = message.data as MappedRPCDispatchData[RPCEvents.Error];
 				reject(e);
 			} else {
 				resolve(message.data);
@@ -323,12 +338,12 @@ export class RPCClient extends EventEmitter {
 	 */
 	public authenticate(accessToken: string): Promise<RPCClient> {
 		return (
-			this.request(RPCCommands.Authenticate, { access_token: accessToken }) as Promise<AuthenticatePayloadData>
-		).then(({ application, user }) => {
+			this.request(RPCCommands.Authenticate, { access_token: accessToken }) as Promise<RPCAuthenticateResponsePayload>
+		).then((output) => {
 			this.accessToken = accessToken;
-			this.application = application;
-			this.user = user;
-			this.emit('ready');
+			this.application = output.data.application;
+			this.user = output.data.user;
+			this.emit(RPCEvents.Ready, { user: this.user } as unknown as MappedRPCDispatchData[RPCEvents.Ready]);
 			return this;
 		});
 	}
