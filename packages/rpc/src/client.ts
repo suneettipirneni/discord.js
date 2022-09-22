@@ -666,13 +666,14 @@ export class RPCClient extends EventEmitter {
 	public async getRelationships() {
 		// why does get the keys and attempts to index them from the request?
 		const types = Object.keys(RelationshipType);
-		// eslint-disable-next-line promise/prefer-await-to-then
-		return (this.request(RPCCommands.GetRelationships) as Promise<{ relationships: RelationShip[] }>).then((obj) =>
-			obj.relationships.map((relationship) => ({
-				...relationship,
-				type: types[relationship.type],
-			})),
-		);
+		const { relationships } = await (this.request(RPCCommands.GetRelationships) as Promise<{
+			relationships: RelationShip[];
+		}>);
+
+		return relationships.map((relationship) => ({
+			...relationship,
+			type: types[relationship.type],
+		}));
 	}
 
 	/**
