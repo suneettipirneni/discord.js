@@ -47,9 +47,9 @@ export interface MappedRPCDispatchData {
 }
 
 export interface ReadyDispatchData {
-	v: number;
 	config: RPCServerConfiguration;
 	user: Partial<APIUser>;
+	v: number;
 }
 
 export interface ErrorDispatchData {
@@ -69,7 +69,7 @@ export interface GuildCreateDispatchData {
 export interface ChannelCreateDispatchData {
 	id: string;
 	name: string;
-	type: ChannelType.GuildText | ChannelType.GuildVoice | ChannelType.DM | ChannelType.GroupDM;
+	type: ChannelType.DM | ChannelType.GroupDM | ChannelType.GuildText | ChannelType.GuildVoice;
 }
 
 export interface VoiceChannelSelectDispatchData {
@@ -80,21 +80,21 @@ export interface VoiceChannelSelectDispatchData {
 export type VoiceSettingsUpdateDispatchData = GetVoiceSettingsPayloadData;
 
 export interface VoiceStateCreateDispatchData {
-	voice_state: {
-		mute: boolean;
-		deaf: boolean;
-		self_mute: boolean;
-		self_deaf: boolean;
-		suppress: boolean;
-	};
-	user: APIUser;
-	nick: string;
-	volume: number;
 	mute: boolean;
+	nick: string;
 	pan: {
 		left: number;
 		right: number;
 	};
+	user: APIUser;
+	voice_state: {
+		deaf: boolean;
+		mute: boolean;
+		self_deaf: boolean;
+		self_mute: boolean;
+		suppress: boolean;
+	};
+	volume: number;
 }
 
 export type VoiceStateUpdateDispatchData = VoiceStateCreateDispatchData;
@@ -102,11 +102,11 @@ export type VoiceStateUpdateDispatchData = VoiceStateCreateDispatchData;
 export type VoiceStateDeleteDispatchData = VoiceStateCreateDispatchData;
 
 export interface VoiceConnectionStatusDispatchData {
-	state: VoiceConnectionStates;
-	hostname: string;
-	pings: number[];
 	average_ping: number;
+	hostname: string;
 	last_ping: number;
+	pings: number[];
+	state: VoiceConnectionStates;
 }
 
 export type MessageCreateDispatchData = APIMessage;
@@ -124,11 +124,11 @@ export interface SpeakingStartDispatchData {
 export type SpeakingStopDispatchData = SpeakingStartDispatchData;
 
 export interface NotificationCreateDispatchData {
-	channel_id: Snowflake;
-	message: APIMessage;
-	icon_url: string;
-	title: string;
 	body: string;
+	channel_id: Snowflake;
+	icon_url: string;
+	message: APIMessage;
+	title: string;
 }
 
 export interface ActivityJoinDispatchData {

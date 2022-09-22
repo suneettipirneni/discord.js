@@ -80,24 +80,24 @@ export interface MappedRPCCommandsArguments<SubscribeEvent extends RPCEventsWith
 }
 
 export type RPCArguments =
-	| AuthorizeArguments
 	| AuthenticateArguments
-	| GetGuildArguments
+	| AuthorizeArguments
+	| CloseActivityRequestArguments
 	| GetChannelArguments
 	| GetChannelsArguments
-	| SetUserVoiceSettingsData
-	| SelectVoiceChannelArguments
-	| SelectTextChannelArguments
+	| GetGuildArguments
 	| GetVoiceSettingsPayloadData
-	| SetCertifiedDevicesArguments
-	| SetActivityArguments
+	| SelectTextChannelArguments
+	| SelectVoiceChannelArguments
 	| SendActivityJoinInviteArguments
-	| CloseActivityRequestArguments;
+	| SetActivityArguments
+	| SetCertifiedDevicesArguments
+	| SetUserVoiceSettingsData;
 
 export interface AuthorizeArguments {
-	scopes: OAuth2Scopes[];
 	client_id: string;
 	rpc_token: string;
+	scopes: OAuth2Scopes[];
 	username: string;
 }
 
@@ -120,8 +120,8 @@ export interface GetChannelsArguments {
 
 export interface SelectVoiceChannelArguments {
 	channel_id: Snowflake;
-	timeout?: number;
 	force: boolean;
+	timeout?: number;
 }
 
 export interface SelectTextChannelArguments {
@@ -134,8 +134,8 @@ export interface SetCertifiedDevicesArguments {
 }
 
 export interface SetActivityArguments {
+	activity?: Omit<GatewayActivity, 'created_at' | 'id' | 'name' | 'type'>;
 	pid: number;
-	activity?: Omit<GatewayActivity, 'name' | 'type' | 'id' | 'created_at'>;
 }
 
 export interface SendActivityJoinInviteArguments {

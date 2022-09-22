@@ -1,21 +1,25 @@
 import { EventEmitter } from 'node:events';
+import { setTimeout } from 'node:timers';
+// eslint-disable-next-line n/no-extraneous-import
 import type { default as WebSocketType } from 'ws';
-import type { Transport } from './index';
+import { browser } from '..';
 import type { RPCClient } from '../client';
-import { browser } from '../index';
+import type { Transport } from './index';
 
 type WebSocketConstructor = new (url: string, options?: WebSocketType.ClientOptions) => WebSocketType;
 
-// @ts-expect-error
-// eslint-disable-next-line
+// @ts-expect-error - TS doesn't know that window can exist if browser is true
+// eslint-disable-next-line import/no-extraneous-dependencies, @typescript-eslint/no-require-imports, n/no-extraneous-require
 const WebSocket = (browser ? window.WebSocket : require('ws')) as WebSocketConstructor;
 
-const pack = (d: Record<string, unknown> | string) => JSON.stringify(d);
-const unpack = (s: string) => JSON.parse(s) as Record<string, unknown>;
+const pack = (data: Record<string, unknown> | string) => JSON.stringify(data);
+const unpack = (data: string) => JSON.parse(data) as Record<string, unknown>;
 
 export class WebSocketTransport extends EventEmitter implements Transport {
 	private readonly client: RPCClient;
+
 	private ws: WebSocketType | null;
+
 	private tries: number;
 
 	public constructor(client: RPCClient) {
@@ -26,7 +30,7 @@ export class WebSocketTransport extends EventEmitter implements Transport {
 	}
 
 	public connect() {
-		const port = 6463 + (this.tries % 10);
+		const port = 6_463 + (this.tries % 10);
 		this.tries += 1;
 
 		this.ws = new WebSocket(
@@ -47,6 +51,7 @@ export class WebSocketTransport extends EventEmitter implements Transport {
 		if (!event.wasClean) {
 			return;
 		}
+
 		this.emit('close', event);
 	}
 
@@ -75,9 +80,9 @@ export class WebSocketTransport extends EventEmitter implements Transport {
 	// eslint-disable-next-line @typescript-eslint/no-empty-function
 	public ping() {}
 
-	public close() {
-		return new Promise<void>((r) => {
-			this.once('close', r);
+	public async close() {
+		return new Promise<void>((resolve) => {
+			this.once('close', resolve);
 			this.ws!.close();
 		});
 	}

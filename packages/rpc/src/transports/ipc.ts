@@ -1,11 +1,14 @@
-import net, { type Socket } from 'net';
+import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import net, { type Socket } from 'node:net';
+import process from 'node:process';
 import { fetch } from 'undici';
-import type { Transport } from './index';
 import type { RPCClient } from '../client';
 import type { RPCPayload, RPCResponsePayload } from '../typings/payloads';
+// eslint-disable-next-line import/extensions
 import { RPCCommands, RPCEvents } from '../typings/types';
+import type { Transport } from './index';
 
 enum OPCodes {
 	HANDSHAKE,
@@ -19,6 +22,7 @@ function getIPCPath(id: number) {
 	if (process.platform === 'win32') {
 		return `\\\\?\\pipe\\discord-ipc-${id}`;
 	}
+
 	const {
 		env: { XDG_RUNTIME_DIR, TMPDIR, TMP, TEMP },
 	} = process;
@@ -26,7 +30,7 @@ function getIPCPath(id: number) {
 	return `${prefix.replace(/\/$/, '')}/discord-ipc-${id}`;
 }
 
-function getIPC(id = 0): Promise<Socket> {
+async function getIPC(id = 0): Promise<Socket> {
 	return new Promise((resolve, reject) => {
 		const path = getIPCPath(id);
 		const onerror = () => {
@@ -36,6 +40,7 @@ function getIPC(id = 0): Promise<Socket> {
 				reject(new Error('Could not connect'));
 			}
 		};
+
 		const sock = net.createConnection(path, () => {
 			sock.removeListener('error', onerror);
 			resolve(sock);
@@ -48,14 +53,16 @@ async function findEndpoint(tries = 0): Promise<string> {
 	if (tries > 30) {
 		throw new Error('Could not find endpoint');
 	}
-	const endpoint = `http://127.0.0.1:${6463 + (tries % 10)}`;
+
+	const endpoint = `http://127.0.0.1:${6_463 + (tries % 10)}`;
 	try {
-		const r = await fetch(endpoint);
-		if (r.status === 404) {
+		const res = await fetch(endpoint);
+		if (res.status === 404) {
 			return endpoint;
 		}
+
 		return await findEndpoint(tries + 1);
-	} catch (e) {
+	} catch {
 		return findEndpoint(tries + 1);
 	}
 }
@@ -71,12 +78,13 @@ function encode(op: number, data: unknown) {
 }
 
 interface PacketData {
-	opcode: number;
-	length: number;
 	data: Buffer;
+	length: number;
+	opcode: number;
 }
 
-function decode(socket: Socket, callback: (opts: { op: number; data: RPCResponsePayload | undefined }) => void) {
+// eslint-disable-next-line promise/prefer-await-to-callbacks
+function decode(socket: Socket, callback: (opts: { data: RPCResponsePayload | undefined; op: number }) => void) {
 	const rawData = socket.read() as Buffer | undefined;
 	if (!rawData) return;
 
@@ -94,11 +102,13 @@ function decode(socket: Socket, callback: (opts: { op: number; data: RPCResponse
 	}
 
 	if (packetData.data.length > packetData.length) throw new Error('Malformed packet');
+	// eslint-disable-next-line n/no-callback-literal, promise/prefer-await-to-callbacks
 	callback({ op: packetData.opcode, data: JSON.parse(packetData.data.toString()) as RPCResponsePayload });
 }
 
 class IPCTransport extends EventEmitter implements Transport {
 	private readonly client: RPCClient;
+
 	private socket: Socket | null;
 
 	public constructor(client: RPCClient) {
@@ -115,6 +125,7 @@ class IPCTransport extends EventEmitter implements Transport {
 		this.emit('open');
 		socket.write(
 			encode(OPCodes.HANDSHAKE, {
+				// eslint-disable-next-line id-length
 				v: 1,
 				client_id: this.client.clientId,
 			}),
@@ -133,14 +144,16 @@ class IPCTransport extends EventEmitter implements Transport {
 
 						if (data.cmd === RPCCommands.Authorize && data.evt !== RPCEvents.Error) {
 							findEndpoint()
+								// eslint-disable-next-line promise/prefer-await-to-then
 								.then((endpoint) => {
 									this.client.updateEndpoint(endpoint);
 								})
-								.catch((e) => {
-									// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-									this.client.emit(RPCEvents.Error, e);
+								// eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks
+								.catch((error) => {
+									this.client.emit(RPCEvents.Error, error);
 								});
 						}
+
 						this.emit('message', data);
 						break;
 					case OPCodes.CLOSE:
@@ -162,8 +175,8 @@ class IPCTransport extends EventEmitter implements Transport {
 	}
 
 	public async close() {
-		return new Promise<void>((r) => {
-			this.once('close', r);
+		return new Promise<void>((resolve) => {
+			this.once('close', resolve);
 			this.send({} as RPCPayload, OPCodes.CLOSE);
 			this.socket!.end();
 		});

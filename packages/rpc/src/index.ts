@@ -1,9 +1,10 @@
-import { RPCClient } from './client';
+// eslint-disable-next-line import/extensions
 import { register as registerUtil } from './util';
 
-export const Client = RPCClient;
-export const register = (id: string) =>
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
-	registerUtil(`discord-${id}`);
-// @ts-expect-error
+export const register = (id: string) => registerUtil(`discord-${id}`);
+
+// @ts-expect-error - TS don't know that window can sometimes exist
 export const browser = typeof window !== 'undefined';
+
+// eslint-disable-next-line import/extensions
+export { RPCClient as Client } from './client';

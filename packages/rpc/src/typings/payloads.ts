@@ -25,7 +25,7 @@ import type {
 import type { SetUserVoiceSettingsData } from './structs';
 import type { RPCCommands, RPCEvents } from './types';
 
-export type RPCPayload = RPCCommandPayload | RPCSubscribedRequestPayload | BaseRPCServerResponsePayload;
+export type RPCPayload = BaseRPCServerResponsePayload | RPCCommandPayload | RPCSubscribedRequestPayload;
 
 export interface BaseRPCPayload {
 	cmd: RPCCommands;
@@ -39,24 +39,24 @@ export interface RPCCommandResponsePayload extends BaseRPCPayload {
 // ----- BEGIN RPC COMMAND RESPONSE TYPES -----
 
 export type RPCResponsePayload =
-	| RPCAuthorizeResponsePayload
 	| RPCAuthenticateResponsePayload
-	| RPCGetGuildResponsePayload
-	| RPCGetGuildsResponsePayload
+	| RPCAuthorizeResponsePayload
+	| RPCCloseActivityRequestResponsePayload
 	| RPCGetChannelResponsePayload
 	| RPCGetChannelsResponsePayload
-	| RPCSetUserVoiceSettingsResponsePayload
-	| RPCSelectVoiceChannelResponsePayload
+	| RPCGetGuildResponsePayload
+	| RPCGetGuildsResponsePayload
 	| RPCGetVoiceSettingsResponsePayload
-	| RPCSetVoiceSettingsResponsePayload
-	| RPCSetCertifiedDevicesResponsePayload
-	| RPCSetActivityResponsePayload
+	| RPCSelectVoiceChannelResponsePayload
 	| RPCSendActivityJoinInviteResponsePayload
-	| RPCCloseActivityRequestResponsePayload;
+	| RPCSetActivityResponsePayload
+	| RPCSetCertifiedDevicesResponsePayload
+	| RPCSetUserVoiceSettingsResponsePayload
+	| RPCSetVoiceSettingsResponsePayload;
 
 export interface BaseRPCServerResponsePayload extends BaseRPCPayload {
-	nonce: string;
 	evt?: RPCEvents;
+	nonce: string;
 }
 
 export interface RPCAuthorizeResponsePayload extends BaseRPCServerResponsePayload {
@@ -139,99 +139,99 @@ export interface RPCCloseActivityRequestResponsePayload extends BaseRPCServerRes
 // ----- BEGIN RPC COMMAND REQUEST TYPES -----
 
 export type RPCCommandPayload =
-	| RPCAuthorizeCommandRequestPayload
 	| RPCAuthenticateCommandRequestPayload
-	| RPCGetGuildCommandRequestPayload
-	| RPCGetGuildsCommandRequestPayload
+	| RPCAuthorizeCommandRequestPayload
+	| RPCCloseActivityRequestCommandRequestPayload
 	| RPCGetChannelCommandRequestPayload
 	| RPCGetChannelsCommandRequestPayload
-	| RPCSetUserVoiceSettingsCommandRequestPayload
-	| RPCSelectVoiceChannelCommandRequestPayload
+	| RPCGetGuildCommandRequestPayload
+	| RPCGetGuildsCommandRequestPayload
 	| RPCGetVoiceSettingsCommandRequestPayload
-	| RPCSetVoiceSettingsCommandRequestPayload
-	| RPCSetCertifiedDevicesCommandRequestPayload
-	| RPCSetActivityCommandRequestPayload
+	| RPCSelectVoiceChannelCommandRequestPayload
 	| RPCSendActivityJoinInviteCommandRequestPayload
-	| RPCCloseActivityRequestCommandRequestPayload;
+	| RPCSetActivityCommandRequestPayload
+	| RPCSetCertifiedDevicesCommandRequestPayload
+	| RPCSetUserVoiceSettingsCommandRequestPayload
+	| RPCSetVoiceSettingsCommandRequestPayload;
 
 export interface RPCAuthorizeCommandRequestPayload {
-	cmd: RPCCommands.Authorize;
 	args: AuthorizeArguments;
+	cmd: RPCCommands.Authorize;
 }
 
 export interface RPCAuthenticateCommandRequestPayload {
-	cmd: RPCCommands.Authenticate;
 	args: AuthenticateArguments;
+	cmd: RPCCommands.Authenticate;
 }
 
 export interface RPCGetGuildCommandRequestPayload {
-	cmd: RPCCommands.GetGuild;
 	args: GetGuildArguments;
+	cmd: RPCCommands.GetGuild;
 }
 
 export interface RPCGetGuildsCommandRequestPayload {
-	cmd: RPCCommands.GetGuilds;
 	args: undefined;
+	cmd: RPCCommands.GetGuilds;
 }
 
 export interface RPCGetChannelCommandRequestPayload {
-	cmd: RPCCommands.GetChannel;
 	args: GetChannelArguments;
+	cmd: RPCCommands.GetChannel;
 }
 
 export interface RPCGetChannelsCommandRequestPayload {
-	cmd: RPCCommands.GetChannels;
 	args: GetChannelArguments;
+	cmd: RPCCommands.GetChannels;
 }
 
 export interface RPCSetUserVoiceSettingsCommandRequestPayload {
-	cmd: RPCCommands.SetUserVoiceSettings;
 	args: SetUserVoiceSettingsData;
+	cmd: RPCCommands.SetUserVoiceSettings;
 }
 
 export interface RPCSelectVoiceChannelCommandRequestPayload {
-	cmd: RPCCommands.SelectVoiceChannel;
 	args: SelectVoiceChannelArguments;
+	cmd: RPCCommands.SelectVoiceChannel;
 }
 
 export interface RPCGetSelectedVoiceChannelCommandRequestPayload {
-	cmd: RPCCommands.GetSelectedVoiceChannel;
 	args: undefined;
+	cmd: RPCCommands.GetSelectedVoiceChannel;
 }
 
 export interface RPCSelectTextChannelCommandRequestPayload {
-	cmd: RPCCommands.SelectTextChannel;
 	args: SelectTextChannelArguments;
+	cmd: RPCCommands.SelectTextChannel;
 }
 
 export interface RPCGetVoiceSettingsCommandRequestPayload {
-	cmd: RPCCommands.GetVoiceSettings;
 	args: undefined;
+	cmd: RPCCommands.GetVoiceSettings;
 }
 
 export interface RPCSetVoiceSettingsCommandRequestPayload {
-	cmd: RPCCommands.SetVoiceSettings;
 	args: GetVoiceSettingsPayloadData;
+	cmd: RPCCommands.SetVoiceSettings;
 }
 
 export interface RPCSetCertifiedDevicesCommandRequestPayload {
-	cmd: RPCCommands.SetCertifiedDevices;
 	args: SetCertifiedDevicesArguments;
+	cmd: RPCCommands.SetCertifiedDevices;
 }
 
 export interface RPCSetActivityCommandRequestPayload {
-	cmd: RPCCommands.SetActivity;
 	args: SetActivityArguments;
+	cmd: RPCCommands.SetActivity;
 }
 
 export interface RPCSendActivityJoinInviteCommandRequestPayload {
-	cmd: RPCCommands.SendActivityJoinInvite;
 	args: SendActivityJoinInviteArguments;
+	cmd: RPCCommands.SendActivityJoinInvite;
 }
 
 export interface RPCCloseActivityRequestCommandRequestPayload {
-	cmd: RPCCommands.CloseActivityRequest;
 	args: CloseActivityRequestArguments;
+	cmd: RPCCommands.CloseActivityRequest;
 }
 
 export interface RPCSubscribedRequestPayload extends BaseRPCPayload {
@@ -240,19 +240,19 @@ export interface RPCSubscribedRequestPayload extends BaseRPCPayload {
 
 export interface DispatchRPCRequestPayload extends BaseRPCPayload {
 	cmd: RPCCommands.Dispatch;
-	evt: RPCEvents;
 	data: RPCDispatchData;
+	evt: RPCEvents;
 }
 
 export interface AuthorizeRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.Authorize;
 	args?: AuthorizeArguments;
+	cmd: RPCCommands.Authorize;
 	data?: AuthorizePayloadData;
 }
 
 export interface AuthenticateRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.Authenticate;
 	args?: AuthenticateArguments;
+	cmd: RPCCommands.Authenticate;
 	data?: AuthenticatePayloadData;
 }
 
@@ -262,32 +262,32 @@ export interface GetGuildsRequestPayload extends Omit<BaseRPCPayload, 'args'> {
 }
 
 export interface GetGuildRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.GetGuild;
 	args?: GetGuildArguments;
+	cmd: RPCCommands.GetGuild;
 	data?: GetGuildPayloadData;
 }
 
 export interface GetChannelRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.GetChannel;
 	args?: GetChannelArguments;
+	cmd: RPCCommands.GetChannel;
 	data?: GetChannelPayloadData;
 }
 
 export interface GetChannelsRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.GetChannels;
 	args?: GetChannelsArguments;
+	cmd: RPCCommands.GetChannels;
 	data?: GetChannelsPayloadData;
 }
 
 export interface SetUserVoiceSettingsRequestPayload extends BaseRPCPayload {
+	args?: SetUserVoiceSettingsData;
 	cmd: RPCCommands.SetUserVoiceSettings;
 	data?: SetUserVoiceSettingsData;
-	args?: SetUserVoiceSettingsData;
 }
 
 export interface SelectVoiceChannelRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.SelectVoiceChannel;
 	args?: SelectVoiceChannelArguments;
+	cmd: RPCCommands.SelectVoiceChannel;
 }
 
 export interface GetSelectedVoiceChannelRequestPayload extends BaseRPCPayload {
@@ -296,8 +296,8 @@ export interface GetSelectedVoiceChannelRequestPayload extends BaseRPCPayload {
 }
 
 export interface SelectTextChannelRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.SelectTextChannel;
 	args?: SelectTextChannelArguments;
+	cmd: RPCCommands.SelectTextChannel;
 }
 
 export interface GetVoiceSettingsRequestPayload extends BaseRPCPayload {
@@ -306,53 +306,53 @@ export interface GetVoiceSettingsRequestPayload extends BaseRPCPayload {
 }
 
 export interface SetVoiceSettingsRequestPayload extends BaseRPCPayload {
+	args?: GetVoiceSettingsPayloadData;
 	cmd: RPCCommands.SetVoiceSettings;
 	data?: GetVoiceSettingsPayloadData;
-	args?: GetVoiceSettingsPayloadData;
 }
 
 export interface SubscribeRequestPayload<
-	T extends Exclude<RPCEvents, RPCEvents.Ready | RPCEvents.Error> = Exclude<
+	T extends Exclude<RPCEvents, RPCEvents.Error | RPCEvents.Ready> = Exclude<
 		RPCEvents,
-		RPCEvents.Ready | RPCEvents.Error
+		RPCEvents.Error | RPCEvents.Ready
 	>,
 > extends BaseRPCPayload {
-	evt: T;
-	cmd: RPCCommands.Subscribe;
 	args: MappedRPCDispatchData[T];
+	cmd: RPCCommands.Subscribe;
 	data?: SubscribePayloadData;
+	evt: T;
 }
 
 export interface UnsubscribeRequestPayload<
-	T extends Exclude<RPCEvents, RPCEvents.Ready | RPCEvents.Error> = Exclude<
+	T extends Exclude<RPCEvents, RPCEvents.Error | RPCEvents.Ready> = Exclude<
 		RPCEvents,
-		RPCEvents.Ready | RPCEvents.Error
+		RPCEvents.Error | RPCEvents.Ready
 	>,
 > extends BaseRPCPayload {
-	cmd: RPCCommands.Unsubscribe;
-	evt: T;
 	args: MappedRPCDispatchData[T];
+	cmd: RPCCommands.Unsubscribe;
 	data?: SubscribePayloadData;
+	evt: T;
 }
 
 export interface SetCertifiedDevicesRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.SetCertifiedDevices;
 	args?: SetCertifiedDevicesArguments;
+	cmd: RPCCommands.SetCertifiedDevices;
 }
 
 export interface SetActivityRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.SetActivity;
 	args?: SetActivityArguments;
+	cmd: RPCCommands.SetActivity;
 }
 
 export interface SendActivityJoinInviteRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.SendActivityJoinInvite;
 	args?: SendActivityJoinInviteArguments;
+	cmd: RPCCommands.SendActivityJoinInvite;
 }
 
 export interface CloseActivityRequestPayload extends BaseRPCPayload {
-	cmd: RPCCommands.CloseActivityRequest;
 	args?: CloseActivityRequestArguments;
+	cmd: RPCCommands.CloseActivityRequest;
 }
 
 // ----- END RPC COMMAND REQUEST TYPES -----
@@ -360,10 +360,10 @@ export interface CloseActivityRequestPayload extends BaseRPCPayload {
 // ----- BEGIN RPC EVENT PAYLOADS -----
 
 export interface RPCEventPayload<T extends RPCEvents = RPCEvents> {
-	nonce: string;
 	cmd: RPCCommands;
 	data: MappedRPCDispatchData[T];
 	evt: T;
+	nonce: string;
 }
 
 export type RPCClientEvents = {
