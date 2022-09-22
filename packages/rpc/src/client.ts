@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { setTimeout, clearTimeout } from 'timers';
 import { APIUser, OAuth2Scopes, RESTPostOAuth2ClientCredentialsResult, Routes, Snowflake } from 'discord-api-types/v10';
@@ -28,7 +29,7 @@ import type {
 	RelationShip,
 } from './typings/structs';
 import { RPCCommands, RPCEvents, type LobbyType, RelationshipType } from './typings/types';
-import { pid as getPid, uuid } from './util';
+import { pid as getPid } from './util';
 
 function subKey(event: string, args?: unknown[]) {
 	return `${event}${JSON.stringify(args)}`;
@@ -246,7 +247,7 @@ export class RPCClient extends EventEmitter {
 		event?: RPCEvents,
 	): Promise<unknown> {
 		return new Promise((resolve, reject) => {
-			const nonce = uuid();
+			const nonce = randomUUID();
 			const evt = event!;
 			this.transport.send({ cmd, args, evt, nonce });
 			this._expecting.set(nonce, { resolve, reject });

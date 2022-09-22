@@ -1,11 +1,11 @@
 import net, { type Socket } from 'net';
+import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { fetch } from 'undici';
 import type { Transport } from './index';
 import type { RPCClient } from '../client';
 import type { RPCPayload, RPCResponsePayload } from '../typings/payloads';
 import { RPCCommands, RPCEvents } from '../typings/types';
-import { uuid } from '../util';
 
 enum OPCodes {
 	HANDSHAKE,
@@ -70,43 +70,31 @@ function encode(op: number, data: unknown) {
 	return packet;
 }
 
-interface WorkingData {
-	full: string;
-	op: number | undefined;
+interface PacketData {
+	opcode: number;
+	length: number;
+	data: Buffer;
 }
 
-const working: WorkingData = {
-	full: '',
-	op: undefined,
-};
-
 function decode(socket: Socket, callback: (opts: { op: number; data: RPCResponsePayload | undefined }) => void) {
-	const packet = socket.read() as Buffer | undefined;
-	if (!packet) {
-		return;
+	const rawData = socket.read() as Buffer | undefined;
+	if (!rawData) return;
+
+	const packetData: PacketData = {
+		opcode: rawData.readInt32LE(0),
+		length: rawData.readInt32LE(4),
+		data: rawData.subarray(8),
+	};
+
+	while (packetData.length > packetData.data.length) {
+		const newData = socket.read() as Buffer | undefined;
+		if (!newData) break;
+
+		packetData.data = Buffer.concat([packetData.data, newData]);
 	}
 
-	let { op } = working;
-	let raw;
-	if (working.full === '') {
-		working.op = packet.readInt32LE(0);
-		op = working.op;
-		const len = packet.readInt32LE(4);
-		raw = packet.subarray(8, len + 8);
-	} else {
-		raw = packet.toString();
-	}
-
-	try {
-		const data = JSON.parse(working.full + (raw as string)) as RPCResponsePayload;
-		callback({ op: op!, data });
-		working.full = '';
-		working.op = undefined;
-	} catch (err) {
-		working.full += raw;
-	}
-
-	decode(socket, callback);
+	if (packetData.data.length > packetData.length) throw new Error('Malformed packet');
+	callback({ op: packetData.opcode, data: JSON.parse(packetData.data.toString()) as RPCResponsePayload });
 }
 
 class IPCTransport extends EventEmitter implements Transport {
@@ -182,7 +170,7 @@ class IPCTransport extends EventEmitter implements Transport {
 	}
 
 	public ping() {
-		this.send(uuid(), OPCodes.PING);
+		this.send(randomUUID(), OPCodes.PING);
 	}
 }
 
