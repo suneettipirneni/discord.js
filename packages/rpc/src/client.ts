@@ -153,24 +153,27 @@ export class RPCClient extends EventEmitter {
 			throw new TypeError('RPC_INVALID_TRANSPORT', options.transport as undefined);
 		}
 
-		this.fetch = async (method, path, options) =>
-			fetch(`${this.endpoint}${path}${options?.query ? new URLSearchParams(options.query).toString() : ''}`, {
-				method,
-				body: options?.data.toString() as string | null,
-				headers: {
-					Authorization: `Bearer ${this.accessToken!}`,
+		this.fetch = async (method, path, options) => {
+			const res = await fetch(
+				`${this.endpoint}${path}${options?.query ? new URLSearchParams(options.query).toString() : ''}`,
+				{
+					method,
+					body: options?.data.toString() as string | null,
+					headers: {
+						Authorization: `Bearer ${this.accessToken!}`,
+					},
 				},
-				// eslint-disable-next-line promise/prefer-await-to-then
-			}).then(async (res) => {
-				const body = await res.json();
-				if (!res.ok) {
-					const err = new Error(res.status.toString()) as Error & { body: unknown };
-					err.body = body;
-					throw err;
-				}
+			);
 
-				return body;
-			});
+			const body = await res.json();
+			if (!res.ok) {
+				const err = new Error(res.status.toString()) as Error & { body: unknown };
+				err.body = body;
+				throw err;
+			}
+
+			return body;
+		};
 
 		/**
 		 * Raw transport used
@@ -364,17 +367,17 @@ export class RPCClient extends EventEmitter {
 	 * @param accessToken - access token
 	 */
 	protected async authenticate(accessToken: string): Promise<RPCClient> {
-		return (
-			(this.request(RPCCommands.Authenticate, { access_token: accessToken }) as Promise<RPCAuthenticateResponsePayload>)
-				// eslint-disable-next-line promise/prefer-await-to-then
-				.then((output) => {
-					this.accessToken = accessToken;
-					this.application = output.data.application;
-					this.user = output.data.user;
-					this.emit(RPCEvents.Ready, { user: this.user } as unknown as MappedRPCDispatchData[RPCEvents.Ready]);
-					return this;
-				})
-		);
+		const res = await (this.request(RPCCommands.Authenticate, {
+			access_token: accessToken,
+		}) as Promise<RPCAuthenticateResponsePayload>);
+
+		this.accessToken = accessToken;
+		this.application = res.data.application;
+		this.user = res.data.user;
+
+		this.emit(RPCEvents.Ready, { user: this.user } as unknown as MappedRPCDispatchData[RPCEvents.Ready]);
+
+		return this;
 	}
 
 	/**
@@ -473,8 +476,7 @@ export class RPCClient extends EventEmitter {
 	 * Get current voice settings
 	 */
 	public async getVoiceSettings(): Promise<GetVoiceSettingsPayloadData> {
-		// eslint-disable-next-line promise/prefer-await-to-then
-		return this.request(RPCCommands.GetVoiceSettings).then((setting) => setting as GetVoiceSettingsPayloadData);
+		return (await this.request(RPCCommands.GetVoiceSettings)) as GetVoiceSettingsPayloadData;
 	}
 
 	/**
@@ -507,6 +509,7 @@ export class RPCClient extends EventEmitter {
 			// eslint-disable-next-line promise/prefer-await-to-callbacks
 			callback(shortcut, stop);
 		});
+
 		// eslint-disable-next-line promise/prefer-await-to-then
 		return this.request(RPCCommands.CaptureShortcut, { action: 'START' }).then(() => stop);
 	}

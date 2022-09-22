@@ -18,7 +18,7 @@ enum OPCodes {
 	PONG,
 }
 
-function getIPCPath(id: number) {
+export const getIPCPath = (id: number) => {
 	if (process.platform === 'win32') {
 		return `\\\\?\\pipe\\discord-ipc-${id}`;
 	}
@@ -28,7 +28,7 @@ function getIPCPath(id: number) {
 	} = process;
 	const prefix = XDG_RUNTIME_DIR ?? TMPDIR ?? TMP ?? TEMP ?? '/tmp';
 	return `${prefix.replace(/\/$/, '')}/discord-ipc-${id}`;
-}
+};
 
 async function getIPC(id = 0): Promise<Socket> {
 	return new Promise((resolve, reject) => {
@@ -77,35 +77,6 @@ function encode(op: number, data: unknown) {
 	return packet;
 }
 
-interface PacketData {
-	data: Buffer;
-	length: number;
-	opcode: number;
-}
-
-// eslint-disable-next-line promise/prefer-await-to-callbacks
-function decode(socket: Socket, callback: (opts: { data: RPCResponsePayload | undefined; op: number }) => void) {
-	const rawData = socket.read() as Buffer | undefined;
-	if (!rawData) return;
-
-	const packetData: PacketData = {
-		opcode: rawData.readInt32LE(0),
-		length: rawData.readInt32LE(4),
-		data: rawData.subarray(8),
-	};
-
-	while (packetData.length > packetData.data.length) {
-		const newData = socket.read() as Buffer | undefined;
-		if (!newData) break;
-
-		packetData.data = Buffer.concat([packetData.data, newData]);
-	}
-
-	if (packetData.data.length > packetData.length) throw new Error('Malformed packet');
-	// eslint-disable-next-line n/no-callback-literal, promise/prefer-await-to-callbacks
-	callback({ op: packetData.opcode, data: JSON.parse(packetData.data.toString()) as RPCResponsePayload });
-}
-
 class IPCTransport extends EventEmitter implements Transport {
 	private readonly client: RPCClient;
 
@@ -115,6 +86,37 @@ class IPCTransport extends EventEmitter implements Transport {
 		super();
 		this.client = client;
 		this.socket = null;
+	}
+
+	private async onPacket(data: Buffer): Promise<void> {
+		const op = data.readInt32LE(0);
+		const packetData = JSON.parse(data.subarray(8).toString()) as RPCResponsePayload;
+
+		switch (op) {
+			case OPCodes.PING:
+				this.send(packetData!, OPCodes.PONG);
+				break;
+			case OPCodes.FRAME:
+				if (!packetData) {
+					return;
+				}
+
+				if (packetData.cmd === RPCCommands.Authorize && packetData.evt !== RPCEvents.Error) {
+					const endpoint = await findEndpoint().catch((error) => error);
+
+					if (!endpoint) return void this.client.emit(RPCEvents.Error, endpoint);
+
+					this.client.updateEndpoint(endpoint);
+				}
+
+				this.emit('message', packetData);
+				break;
+			case OPCodes.CLOSE:
+				this.emit('close', packetData);
+				break;
+			default:
+				break;
+		}
 	}
 
 	public async connect() {
@@ -131,39 +133,32 @@ class IPCTransport extends EventEmitter implements Transport {
 			}),
 		);
 		socket.pause();
-		socket.on('readable', () => {
-			decode(socket, ({ op, data }) => {
-				switch (op) {
-					case OPCodes.PING:
-						this.send(data!, OPCodes.PONG);
-						break;
-					case OPCodes.FRAME:
-						if (!data) {
-							return;
-						}
 
-						if (data.cmd === RPCCommands.Authorize && data.evt !== RPCEvents.Error) {
-							findEndpoint()
-								// eslint-disable-next-line promise/prefer-await-to-then
-								.then((endpoint) => {
-									this.client.updateEndpoint(endpoint);
-								})
-								// eslint-disable-next-line promise/prefer-await-to-then, promise/prefer-await-to-callbacks
-								.catch((error) => {
-									this.client.emit(RPCEvents.Error, error);
-								});
-						}
+		let chunkedData: Buffer | null = Buffer.alloc(0);
+		let remainingBytes: number | null = 0;
+		const onData = (data: Buffer): void => {
+			if (!socket || socket.destroyed) return;
 
-						this.emit('message', data);
-						break;
-					case OPCodes.CLOSE:
-						this.emit('close', data);
-						break;
-					default:
-						break;
-				}
-			});
-		});
+			const wholeData = chunkedData ? Buffer.concat([chunkedData, data.subarray(0, remainingBytes!)]) : data;
+			const remainingData = remainingBytes ? data.subarray(remainingBytes) : null;
+
+			const length = wholeData.readUInt32LE(4);
+			const jsonData = wholeData.subarray(8);
+
+			remainingBytes = length - jsonData.length;
+
+			if (remainingBytes && remainingBytes > 0) {
+				chunkedData = wholeData;
+			} else {
+				chunkedData = null;
+				remainingBytes = null;
+			}
+
+			void this.onPacket(wholeData);
+			if (remainingData) onData(remainingData);
+		};
+
+		socket.on('data', onData);
 	}
 
 	public onClose(error: boolean) {
@@ -187,4 +182,4 @@ class IPCTransport extends EventEmitter implements Transport {
 	}
 }
 
-export { IPCTransport as default, encode, decode };
+export { IPCTransport as default, encode };
