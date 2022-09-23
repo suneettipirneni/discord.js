@@ -98,6 +98,7 @@ export enum RPCEvents {
 	SpeakingStart = 'SPEAKING_START',
 	SpeakingStop = 'SPEAKING_STOP',
 	UserAchievementUpdate = 'USER_ACHIEVEMENT_UPDATE',
+	VoiceChannelEffectToggleAnimationType = 'VOICE_CHANNEL_EFFECT_TOGGLE_ANIMATION_TYPE',
 	VoiceChannelSelect = 'VOICE_CHANNEL_SELECT',
 	VoiceConnectionStatus = 'VOICE_CONNECTION_STATUS',
 	VoiceSettingsUpdate = 'VOICE_SETTINGS_UPDATE',
