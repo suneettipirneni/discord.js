@@ -9,7 +9,7 @@
 		"format": "prettier --write . && eslint src __tests__ --ext mjs,js,ts --fix",
 		"docs": "docgen -i src/index.ts -c docs/index.json -o docs/docs.json --typescript && api-extractor run --local",
 		"prepack": "yarn build && yarn lint",
-		"changelog": "git cliff --prepend ./CHANGELOG.md -u -c ./cliff.toml -r ../../ --include-path 'packages/rest/*'",
+		"changelog": "git cliff --prepend ./CHANGELOG.md -u -c ./cliff.toml -r ../../ --include-path 'packages/rpc/*'",
 		"release": "cliff-jumper"
 	},
 	"main": "./dist/index.js",

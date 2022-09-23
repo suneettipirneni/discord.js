@@ -26,6 +26,10 @@
   - packages/rest/*
   - packages/rest/**/*
 
+'packages:rpc':
+  - packages/rpc/*
+  - packages/rpc/**/*
+
 'packages:voice':
   - packages/voice/*
   - packages/voice/**/*
