@@ -96,6 +96,7 @@ export type RPCArguments =
 
 export interface AuthorizeArguments {
 	client_id: string;
+	prompt: 'consent' | 'none';
 	rpc_token: string;
 	scopes: OAuth2Scopes[];
 	username: string;

@@ -335,8 +335,10 @@ export class RPCClient extends EventEmitter {
 		rpcToken,
 		username,
 		redirectUri,
+		prompt,
 	}: {
 		clientSecret: string;
+		prompt?: 'consent' | 'none';
 		redirectUri?: string;
 		rpcToken: boolean | string;
 		scopes: OAuth2Scopes[];
@@ -358,6 +360,7 @@ export class RPCClient extends EventEmitter {
 			client_id: this.clientId!,
 			rpc_token: rpcToken as string,
 			username,
+			prompt: prompt ?? 'consent',
 		})) as AuthorizePayloadData;
 
 		const response = (await this.fetch('POST', Routes.oauth2TokenExchange(), {
