@@ -1,13 +1,11 @@
 import { Buffer } from 'node:buffer';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
+import fs from 'node:fs';
 import net, { type Socket } from 'node:net';
 import process from 'node:process';
-import { fetch } from 'undici';
 import type { RPCClient } from '../client';
 import type { RPCPayload, RPCResponsePayload } from '../typings/payloads';
-// eslint-disable-next-line import/extensions
-import { RPCCommands, RPCEvents } from '../typings/types';
 import type { Transport } from './index';
 
 enum OPCodes {
@@ -26,45 +24,51 @@ export const getIPCPath = (id: number) => {
 	const {
 		env: { XDG_RUNTIME_DIR, TMPDIR, TMP, TEMP },
 	} = process;
-	const prefix = XDG_RUNTIME_DIR ?? TMPDIR ?? TMP ?? TEMP ?? '/tmp';
+	// eslint-disable-next-line n/no-sync
+	const prefix = fs.realpathSync(XDG_RUNTIME_DIR ?? TMPDIR ?? TMP ?? TEMP ?? '/tmp');
+
+	// [0] = normal, [1] = snapstore, [2] = flatpak
+	const possibleSubDirectory = ['snap.discord/', 'app/com.discordapp.Discord/'];
+
+	for (const subDirectory of possibleSubDirectory) {
+		const path = `${prefix.replace(/\/$/, '')}/${subDirectory}`;
+		// eslint-disable-next-line n/no-sync
+		if (fs.existsSync(path)) return path + `discord-ipc-${id}`;
+	}
+
 	return `${prefix.replace(/\/$/, '')}/discord-ipc-${id}`;
 };
 
-async function getIPC(id = 0): Promise<Socket> {
+const createSocket = async (path: string): Promise<net.Socket> => {
 	return new Promise((resolve, reject) => {
-		const path = getIPCPath(id);
-		const onerror = () => {
-			if (id < 10) {
-				resolve(getIPC(id + 1));
-			} else {
-				reject(new Error('Could not connect'));
-			}
+		const socket = net.createConnection(path);
+
+		const onError = (err: Error) => {
+			// eslint-disable-next-line @typescript-eslint/no-use-before-define
+			socket.removeListener('conect', onConnect);
+			reject(err);
 		};
 
-		const sock = net.createConnection(path, () => {
-			sock.removeListener('error', onerror);
-			resolve(sock);
-		});
-		sock.once('error', onerror);
+		const onConnect = () => {
+			socket.removeListener('error', onError);
+			resolve(socket);
+		};
+
+		socket.once('connect', onConnect);
+		socket.once('error', onError);
 	});
-}
+};
 
-async function findEndpoint(tries = 0): Promise<string> {
-	if (tries > 30) {
-		throw new Error('Could not find endpoint');
-	}
-
-	const endpoint = `http://127.0.0.1:${6_463 + (tries % 10)}`;
-	try {
-		const res = await fetch(endpoint);
-		if (res.status === 404) {
-			return endpoint;
+async function getIPC(): Promise<Socket> {
+	for (let id = 1; id < 10; id++) {
+		try {
+			return await createSocket(getIPCPath(id));
+		} catch {
+			continue;
 		}
-
-		return await findEndpoint(tries + 1);
-	} catch {
-		return findEndpoint(tries + 1);
 	}
+
+	throw new Error('Could not connect');
 }
 
 function encode(op: number, data: unknown) {
@@ -99,14 +103,6 @@ class IPCTransport extends EventEmitter implements Transport {
 			case OPCodes.FRAME:
 				if (!packetData) {
 					return;
-				}
-
-				if (packetData.cmd === RPCCommands.Authorize && packetData.evt !== RPCEvents.Error) {
-					const endpoint = await findEndpoint().catch((error) => error);
-
-					if (!endpoint) return void this.client.emit(RPCEvents.Error, endpoint);
-
-					this.client.updateEndpoint(endpoint);
 				}
 
 				this.emit('message', packetData);

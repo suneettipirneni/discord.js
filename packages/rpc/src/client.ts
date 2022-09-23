@@ -6,6 +6,8 @@ import type { APIUser, OAuth2Scopes, RESTPostOAuth2ClientCredentialsResult, Snow
 import { Routes } from 'discord-api-types/v10';
 import { fetch } from 'undici';
 // eslint-disable-next-line import/extensions
+import { RPCError } from './error';
+// eslint-disable-next-line import/extensions
 import { transports } from './transports';
 import type {
 	MappedRPCCommandsArguments,
@@ -32,13 +34,9 @@ import type {
 	RelationShip,
 } from './typings/structs';
 // eslint-disable-next-line import/extensions
-import { RPCCommands, RPCEvents, type LobbyType, RelationshipType } from './typings/types';
+import { RPCCommands, RPCEvents, type LobbyType, RelationshipType, RPCErrorCodes } from './typings/types';
 // eslint-disable-next-line import/extensions
 import { pid as getPid } from './util';
-
-function subKey(event: string, args?: unknown[]) {
-	return `${event}${JSON.stringify(args)}`;
-}
 
 type Class<T extends new (...args: any[]) => unknown> = T extends new (...args: any[]) => infer R ? R : never;
 
@@ -83,6 +81,8 @@ export interface RPCLoginOptions {
 
 /**
  * The main hub for interacting with Discord RPC
+ *
+ * @beta
  */
 export class RPCClient extends EventEmitter {
 	public readonly options: RPCClientOptions;
@@ -120,11 +120,12 @@ export class RPCClient extends EventEmitter {
 
 	private readonly transport: Class<typeof transports[keyof typeof transports]>;
 
-	private readonly _expecting: Map<string, { reject(reason?: Error): void; resolve(value: unknown): void }>;
+	private readonly _expecting: Map<
+		string,
+		{ error: RPCError; reject(reason?: Error): void; resolve(value: unknown): void }
+	>;
 
 	private _connectPromise: Promise<unknown> | undefined;
-
-	private readonly _subscriptions: Map<string, ({ shortcut }: { shortcut: string }) => void>;
 
 	/**
 	 * @param options - Options for the client.
@@ -148,9 +149,11 @@ export class RPCClient extends EventEmitter {
 		 */
 		this.user = null;
 
-		const Transport = options.transport ? transports[options.transport] : false;
-		if (!Transport) {
-			throw new TypeError('RPC_INVALID_TRANSPORT', options.transport as undefined);
+		const transport = options.transport ? transports[options.transport] : false;
+		if (!transport) {
+			const typeError = new TypeError('INVALID_TRANSPORT', options.transport as undefined);
+			Error.captureStackTrace(typeError, this.constructor);
+			throw typeError;
 		}
 
 		this.fetch = async (method, path, options) => {
@@ -178,7 +181,7 @@ export class RPCClient extends EventEmitter {
 		/**
 		 * Raw transport used
 		 */
-		this.transport = new Transport(this);
+		this.transport = new transport(this);
 		this.transport.on('message', this._onRpcMessage.bind(this));
 
 		/**
@@ -187,15 +190,12 @@ export class RPCClient extends EventEmitter {
 		this._expecting = new Map();
 
 		this._connectPromise = undefined;
-
-		/**
-		 * Map of subscriptions
-		 */
-		this._subscriptions = new Map();
 	}
 
 	/**
 	 * Update endpoint
+	 *
+	 * @internal
 	 */
 	public updateEndpoint(endpoint: string) {
 		this.endpoint = endpoint;
@@ -203,15 +203,21 @@ export class RPCClient extends EventEmitter {
 
 	/**
 	 * Search and connect to RPC
+	 *
+	 * @param clientId - Client ID to use
 	 */
 	public async connect(clientId: string) {
 		if (this._connectPromise) {
 			return this._connectPromise;
 		}
 
+		const err = new Error('RPC_CONNECTION_TIMEOUT');
+		// eslint-disable-next-line @typescript-eslint/unbound-method
+		Error.captureStackTrace(err, this.connect);
+
 		this._connectPromise = new Promise((resolve, reject) => {
 			this.clientId = clientId;
-			const timeout = setTimeout(() => reject(new Error('RPC_CONNECTION_TIMEOUT')), 10e3);
+			const timeout = setTimeout(() => reject(err), 10e3);
 			timeout.unref();
 			this.once('connected', () => {
 				clearTimeout(timeout);
@@ -239,7 +245,10 @@ export class RPCClient extends EventEmitter {
 	 *
 	 * @param options - Options for authentication.
 	 * At least one property must be provided to perform login.
-	 * @example client.login({ clientId: '1234567', clientSecret: 'abcdef123' });
+	 * @example
+	 * ```js
+	 * client.login({ clientId: '1234567', clientSecret: 'abcdef123' });
+	 * ```
 	 */
 	public async login(options?: RPCLoginOptions): Promise<RPCClient> {
 		const data = await this.connect(options?.clientId ?? '');
@@ -262,17 +271,22 @@ export class RPCClient extends EventEmitter {
 	 * @param cmd - Command
 	 * @param args - Arguments
 	 * @param event - Event
+	 * @internal
 	 */
 	protected async request<T extends RPCCommands = RPCCommands>(
 		cmd: T,
 		args?: MappedRPCCommandsArguments[T],
 		event?: RPCEvents,
 	): Promise<unknown> {
+		const error = new RPCError(RPCErrorCodes.UnknownError);
+		// eslint-disable-next-line @typescript-eslint/unbound-method
+		RPCError.captureStackTrace(error, this.request);
+
 		return new Promise((resolve, reject) => {
 			const nonce = randomUUID();
 			const evt = event!;
 			this.transport.send({ cmd, args, evt, nonce });
-			this._expecting.set(nonce, { resolve, reject });
+			this._expecting.set(nonce, { resolve, reject, error });
 		});
 	}
 
@@ -282,23 +296,26 @@ export class RPCClient extends EventEmitter {
 	 * @param message - message
 	 */
 	private _onRpcMessage(message: RPCEventPayload) {
+		if (message.cmd === RPCCommands.CaptureShortcut && message.evt === RPCEvents.CaptureShortcutChange) {
+			this.emit(
+				RPCEvents.CaptureShortcutChange,
+				message.data as MappedRPCDispatchData[RPCEvents.CaptureShortcutChange],
+			);
+		}
+
 		if (message.cmd === RPCCommands.Dispatch && message.evt === RPCEvents.Ready) {
 			this.user = (message.data as MappedRPCDispatchData[RPCEvents.Ready]).user;
 			this.emit('connected');
 		} else if (this._expecting.has(message.nonce)) {
-			// TODO: figure out how to resolve this
-			// eslint-disable-next-line @typescript-eslint/unbound-method
-			const { resolve, reject } = this._expecting.get(message.nonce)!;
+			const expect = this._expecting.get(message.nonce)!;
 			if (message.evt === RPCEvents.Error) {
-				const err = new Error((message.data as MappedRPCDispatchData[RPCEvents.Error]).message) as Error & {
-					code: number;
-					data: MappedRPCDispatchData[RPCEvents.Error];
-				};
+				const err = expect.error;
 				err.code = (message.data as MappedRPCDispatchData[RPCEvents.Error]).code;
-				err.data = message.data as MappedRPCDispatchData[RPCEvents.Error];
-				reject(err);
+				err.message = (message.data as MappedRPCDispatchData[RPCEvents.Error]).message;
+
+				expect.reject(err);
 			} else {
-				resolve(message.data);
+				expect.resolve(message.data);
 			}
 
 			this._expecting.delete(message.nonce);
@@ -310,12 +327,7 @@ export class RPCClient extends EventEmitter {
 	/**
 	 * Authorize
 	 *
-	 * @param options - options
-	 * @param options.clientSecret - Application's secret
-	 * @param options.redirectUri - URL that the user got redirected to after authorizing
-	 * @param options.rpcToken - Should we use rpc token?
-	 * @param options.username - Username to use if user doesn't have an account
-	 * @param options.scopes - Scopes to authorize with
+	 * @internal
 	 */
 	protected async authorize({
 		scopes,
@@ -365,6 +377,7 @@ export class RPCClient extends EventEmitter {
 	 * Authenticate
 	 *
 	 * @param accessToken - access token
+	 * @internal
 	 */
 	protected async authenticate(accessToken: string): Promise<RPCClient> {
 		const res = await (this.request(RPCCommands.Authenticate, {
@@ -439,9 +452,7 @@ export class RPCClient extends EventEmitter {
 	 * Move the user to a voice channel
 	 *
 	 * @param id - ID of the voice channel
-	 * @param args - Options
-	 * @param args.timeout - Timeout for the command
-	 * @param args.force - Force this move. This should only be done if you have explicit permission from the user.
+	 * @param args - select voice channel arguments
 	 */
 	public async selectVoiceChannel(
 		id: Snowflake,
@@ -490,28 +501,17 @@ export class RPCClient extends EventEmitter {
 	}
 
 	/**
-	 * Capture a shortcut using the client
-	 * The callback takes (key, stop) where `stop` is a function that will stop capturing.
-	 * This `stop` function must be called before disconnecting or else the user will have
-	 * to restart their client.
-	 *
-	 * @param callback - Callback handling keys
+	 * Start capturing a shortcut using the client
 	 */
-	// eslint-disable-next-line promise/prefer-await-to-callbacks
-	public async captureShortcut(callback: (key: string, stop: () => Promise<unknown>) => void) {
-		const subid = subKey(RPCEvents.CaptureShortcutChange);
-		const stop = async () => {
-			this._subscriptions.delete(subid);
-			return this.request(RPCCommands.CaptureShortcut, { action: 'STOP' });
-		};
+	public async startCapturingShortcut() {
+		return this.request(RPCCommands.CaptureShortcut, { action: 'START' });
+	}
 
-		this._subscriptions.set(subid, ({ shortcut }) => {
-			// eslint-disable-next-line promise/prefer-await-to-callbacks
-			callback(shortcut, stop);
-		});
-
-		// eslint-disable-next-line promise/prefer-await-to-then
-		return this.request(RPCCommands.CaptureShortcut, { action: 'START' }).then(() => stop);
+	/**
+	 * Stop capturing a shortcut using the client
+	 */
+	public async stopCapturingShortcut() {
+		return this.request(RPCCommands.CaptureShortcut, { action: 'STOP' });
 	}
 
 	/**
@@ -529,12 +529,23 @@ export class RPCClient extends EventEmitter {
 				start: activity.timestamps.start ?? Date.now(),
 				end: (activity.timestamps.end ?? null) as unknown as number,
 			};
+
 			if (activity.timestamps.start! > 2_147_483_647_000) {
-				throw new RangeError('timestamps.start must fit into a unix timestamp');
+				const rangeError = new RangeError('timestamps.start must fit into a unix timestamp');
+
+				// eslint-disable-next-line @typescript-eslint/unbound-method
+				Error.captureStackTrace(rangeError, this.setActivity);
+
+				throw rangeError;
 			}
 
 			if (activity.timestamps.end! > 2_147_483_647_000) {
-				throw new RangeError('timestamps.end must fit into a unix timestamp');
+				const rangeError = new RangeError('timestamps.end must fit into a unix timestamp');
+
+				// eslint-disable-next-line @typescript-eslint/unbound-method
+				Error.captureStackTrace(rangeError, this.setActivity);
+
+				throw rangeError;
 			}
 		}
 
