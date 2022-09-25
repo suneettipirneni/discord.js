@@ -1,5 +1,4 @@
-// eslint-disable-next-line import/extensions
-import { RPCErrorCodes } from './typings/types';
+import { RPCErrorCodes } from './typings/types.js';
 
 export class RPCError extends Error {
 	public code: RPCErrorCodes;

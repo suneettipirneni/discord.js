@@ -5,10 +5,8 @@ import { URLSearchParams } from 'node:url';
 import type { APIUser, OAuth2Scopes, RESTPostOAuth2ClientCredentialsResult, Snowflake } from 'discord-api-types/v10';
 import { Routes } from 'discord-api-types/v10';
 import { fetch } from 'undici';
-// eslint-disable-next-line import/extensions
-import { RPCError } from './error';
-// eslint-disable-next-line import/extensions
-import { transports } from './transports';
+import { RPCError } from './error.js';
+import { transports } from './transports/index';
 import type {
 	MappedRPCCommandsArguments,
 	RPCArguments,
@@ -33,10 +31,8 @@ import type {
 	SetUserVoiceSettingsData,
 	RelationShip,
 } from './typings/structs';
-// eslint-disable-next-line import/extensions
-import { RPCCommands, RPCEvents, type LobbyType, RelationshipType, RPCErrorCodes } from './typings/types';
-// eslint-disable-next-line import/extensions
-import { pid as getPid } from './util';
+import { RPCCommands, RPCEvents, type LobbyType, RelationshipType, RPCErrorCodes } from './typings/types.js';
+import { pid as getPid } from './util.js';
 
 type Class<T extends new (...args: any[]) => unknown> = T extends new (...args: any[]) => infer R ? R : never;
 

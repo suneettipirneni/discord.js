@@ -1,6 +1,5 @@
 import { vi, test, expect } from 'vitest';
-// eslint-disable-next-line import/extensions
-import { getIPCPath } from '../src/transports/ipc';
+import { getIPCPath } from '../src/transports/ipc.js';
 
 test('getIPCPath under windows machine', () => {
 	vi.mock('node:process', () => {
