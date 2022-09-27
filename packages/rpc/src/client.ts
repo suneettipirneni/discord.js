@@ -6,7 +6,7 @@ import type { APIUser, OAuth2Scopes, RESTPostOAuth2ClientCredentialsResult, Snow
 import { Routes } from 'discord-api-types/v10';
 import { fetch } from 'undici';
 import { RPCError } from './error.js';
-import { transports } from './transports/index';
+import { transports } from './transports/index.js';
 import type {
 	MappedRPCCommandsArguments,
 	RPCArguments,
