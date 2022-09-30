@@ -27,7 +27,7 @@ export const getIPCPath = (id: number) => {
 	// eslint-disable-next-line n/no-sync
 	const prefix = fs.realpathSync(XDG_RUNTIME_DIR ?? TMPDIR ?? TMP ?? TEMP ?? '/tmp');
 
-	// [0] = normal, [1] = snapstore, [2] = flatpak
+	// [0] = snapstore, [1] = flatpak
 	const possibleSubDirectory = ['snap.discord/', 'app/com.discordapp.Discord/'];
 
 	for (const subDirectory of possibleSubDirectory) {
