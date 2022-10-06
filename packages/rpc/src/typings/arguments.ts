@@ -1,7 +1,7 @@
 import type { OAuth2Scopes, Snowflake, GatewayActivity } from 'discord.js';
 import type { GetVoiceSettingsPayloadData } from './payloaddata';
 import type { SetUserVoiceSettingsData, Device } from './structs';
-import type { RPCCommands, RPCEvents } from './types';
+import type { PromptType, RPCCommands, RPCEvents } from './types';
 
 // TODO: rename types to better differentiate arguments between Events and Commands
 
@@ -80,24 +80,25 @@ export interface MappedRPCCommandsArguments<SubscribeEvent extends RPCEventsWith
 }
 
 export type RPCArguments =
-	| AuthorizeArguments
 	| AuthenticateArguments
-	| GetGuildArguments
+	| AuthorizeArguments
+	| CloseActivityRequestArguments
 	| GetChannelArguments
 	| GetChannelsArguments
-	| SetUserVoiceSettingsData
-	| SelectVoiceChannelArguments
-	| SelectTextChannelArguments
+	| GetGuildArguments
 	| GetVoiceSettingsPayloadData
-	| SetCertifiedDevicesArguments
-	| SetActivityArguments
+	| SelectTextChannelArguments
+	| SelectVoiceChannelArguments
 	| SendActivityJoinInviteArguments
-	| CloseActivityRequestArguments;
+	| SetActivityArguments
+	| SetCertifiedDevicesArguments
+	| SetUserVoiceSettingsData;
 
 export interface AuthorizeArguments {
-	scopes: OAuth2Scopes[];
 	client_id: string;
+	prompt: PromptType;
 	rpc_token: string;
+	scopes: OAuth2Scopes[];
 	username: string;
 }
 
@@ -120,8 +121,8 @@ export interface GetChannelsArguments {
 
 export interface SelectVoiceChannelArguments {
 	channel_id: Snowflake;
-	timeout?: number;
 	force: boolean;
+	timeout?: number;
 }
 
 export interface SelectTextChannelArguments {
@@ -134,8 +135,8 @@ export interface SetCertifiedDevicesArguments {
 }
 
 export interface SetActivityArguments {
+	activity?: Omit<GatewayActivity, 'created_at' | 'id' | 'name' | 'type'>;
 	pid: number;
-	activity?: Omit<GatewayActivity, 'name' | 'type' | 'id' | 'created_at'>;
 }
 
 export interface SendActivityJoinInviteArguments {
@@ -189,6 +190,7 @@ export interface MappedRPCEventsArguments {
 	[RPCEvents.EntitlementCreate]: unknown;
 	[RPCEvents.EntitlementDelete]: unknown;
 	[RPCEvents.UserAchievementUpdate]: unknown;
+	[RPCEvents.VoiceChannelEffectToggleAnimationType]: unknown;
 }
 
 export interface GuildStatusArguments {

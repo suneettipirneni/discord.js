@@ -33,6 +33,12 @@ runs:
         files: ./packages/rest/coverage/cobertura-coverage.xml
         flags: rest
 
+    - name: Upload RPC Coverage
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./packages/rpc/coverage/cobertura-coverage.xml
+        flags: rpc
+
     - name: Upload Voice Coverage
       uses: codecov/codecov-action@v3
       with:

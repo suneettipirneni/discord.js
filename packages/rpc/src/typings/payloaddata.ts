@@ -19,12 +19,12 @@ import type {
 import type { RPCEvents } from './types';
 
 export type RPCPayloadData =
-	| AuthorizePayloadData
 	| AuthenticatePayloadData
-	| GetGuildsPayloadData
-	| GetGuildPayloadData
+	| AuthorizePayloadData
 	| GetChannelPayloadData
 	| GetChannelsPayloadData
+	| GetGuildPayloadData
+	| GetGuildsPayloadData
 	| SetUserVoiceSettingsData;
 
 export interface AuthorizePayloadData {
@@ -32,10 +32,10 @@ export interface AuthorizePayloadData {
 }
 
 export interface AuthenticatePayloadData {
-	user: Partial<APIUser>;
-	scopes: OAuth2Scopes[];
-	expires: string;
 	application: RPCOAuthApplication;
+	expires: string;
+	scopes: OAuth2Scopes[];
+	user: Partial<APIUser>;
 }
 
 export interface GetGuildsPayloadData {
@@ -43,23 +43,23 @@ export interface GetGuildsPayloadData {
 }
 
 export interface GetGuildPayloadData {
-	id: Snowflake;
-	name: string;
 	icon_url: string;
+	id: Snowflake;
 	members: Partial<APIGuildMember>[];
+	name: string;
 }
 
 export interface GetChannelPayloadData {
-	id: Snowflake;
-	guild_id: Snowflake;
-	name: string;
-	type: ChannelType;
-	topic: string;
 	bitrate: number;
-	user_limit: number;
-	position: number;
-	voice_states: GatewayVoiceState[];
+	guild_id: Snowflake;
+	id: Snowflake;
 	messages: APIMessage[];
+	name: string;
+	position: number;
+	topic: string;
+	type: ChannelType;
+	user_limit: number;
+	voice_states: GatewayVoiceState[];
 }
 
 export interface GetChannelsPayloadData {
@@ -67,16 +67,16 @@ export interface GetChannelsPayloadData {
 }
 
 export interface GetVoiceSettingsPayloadData {
-	input: VoiceSettingsInput;
-	output: VoiceSettingsOutput;
-	mode: VoiceSettingsMode;
 	automatic_gain_control: boolean;
+	deaf: boolean;
 	echo_cancellation: boolean;
+	input: VoiceSettingsInput;
+	mode: VoiceSettingsMode;
+	mute: boolean;
 	noise_suppression: boolean;
+	output: VoiceSettingsOutput;
 	qos: boolean;
 	silence_warning: boolean;
-	deaf: boolean;
-	mute: boolean;
 }
 
 export interface SubscribePayloadData {

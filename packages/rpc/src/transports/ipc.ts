@@ -1,63 +1,72 @@
-import net, { type Socket } from 'net';
+import { Buffer } from 'node:buffer';
+import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { fetch } from 'undici';
-import type { Transport } from './index';
+import fs from 'node:fs/promises';
+import net, { type Socket } from 'node:net';
+import process from 'node:process';
 import type { RPCClient } from '../client';
 import type { RPCPayload, RPCResponsePayload } from '../typings/payloads';
-import { RPCCommands, RPCEvents } from '../typings/types';
-import { uuid } from '../util';
+import type { Transport } from './index';
 
 enum OPCodes {
-	HANDSHAKE,
-	FRAME,
-	CLOSE,
-	PING,
-	PONG,
+	Handshake,
+	Frame,
+	Close,
+	Ping,
+	Pong,
 }
 
-function getIPCPath(id: number) {
+export const getIPCPath = async (id: number) => {
 	if (process.platform === 'win32') {
 		return `\\\\?\\pipe\\discord-ipc-${id}`;
 	}
+
 	const {
 		env: { XDG_RUNTIME_DIR, TMPDIR, TMP, TEMP },
 	} = process;
-	const prefix = XDG_RUNTIME_DIR ?? TMPDIR ?? TMP ?? TEMP ?? '/tmp';
+	const prefix = await fs.realpath(XDG_RUNTIME_DIR ?? TMPDIR ?? TMP ?? TEMP ?? '/tmp');
+
+	// [0] = snapstore, [1] = flatpak
+	const possibleSubDirectory = ['snap.discord/', 'app/com.discordapp.Discord/'];
+
+	for (const subDirectory of possibleSubDirectory) {
+		const path = `${prefix.replace(/\/$/, '')}/${subDirectory}`;
+		if (await fs.realpath(path)) return path + `discord-ipc-${id}`;
+	}
+
 	return `${prefix.replace(/\/$/, '')}/discord-ipc-${id}`;
-}
+};
 
-function getIPC(id = 0): Promise<Socket> {
+const createSocket = async (path: string): Promise<net.Socket> => {
 	return new Promise((resolve, reject) => {
-		const path = getIPCPath(id);
-		const onerror = () => {
-			if (id < 10) {
-				resolve(getIPC(id + 1));
-			} else {
-				reject(new Error('Could not connect'));
-			}
-		};
-		const sock = net.createConnection(path, () => {
-			sock.removeListener('error', onerror);
-			resolve(sock);
-		});
-		sock.once('error', onerror);
-	});
-}
+		const socket = net.createConnection(path);
 
-async function findEndpoint(tries = 0): Promise<string> {
-	if (tries > 30) {
-		throw new Error('Could not find endpoint');
-	}
-	const endpoint = `http://127.0.0.1:${6463 + (tries % 10)}`;
-	try {
-		const r = await fetch(endpoint);
-		if (r.status === 404) {
-			return endpoint;
+		const onError = (err: Error) => {
+			// eslint-disable-next-line @typescript-eslint/no-use-before-define
+			socket.removeListener('conect', onConnect);
+			reject(err);
+		};
+
+		const onConnect = () => {
+			socket.removeListener('error', onError);
+			resolve(socket);
+		};
+
+		socket.once('connect', onConnect);
+		socket.once('error', onError);
+	});
+};
+
+async function getIPC(): Promise<Socket> {
+	for (let id = 1; id < 10; id++) {
+		try {
+			return await createSocket(await getIPCPath(id));
+		} catch {
+			continue;
 		}
-		return await findEndpoint(tries + 1);
-	} catch (e) {
-		return findEndpoint(tries + 1);
 	}
+
+	throw new Error('Could not connect');
 }
 
 function encode(op: number, data: unknown) {
@@ -70,53 +79,38 @@ function encode(op: number, data: unknown) {
 	return packet;
 }
 
-interface WorkingData {
-	full: string;
-	op: number | undefined;
-}
-
-const working: WorkingData = {
-	full: '',
-	op: undefined,
-};
-
-function decode(socket: Socket, callback: (opts: { op: number; data: RPCResponsePayload | undefined }) => void) {
-	const packet = socket.read() as Buffer | undefined;
-	if (!packet) {
-		return;
-	}
-
-	let { op } = working;
-	let raw;
-	if (working.full === '') {
-		working.op = packet.readInt32LE(0);
-		op = working.op;
-		const len = packet.readInt32LE(4);
-		raw = packet.subarray(8, len + 8);
-	} else {
-		raw = packet.toString();
-	}
-
-	try {
-		const data = JSON.parse(working.full + (raw as string)) as RPCResponsePayload;
-		callback({ op: op!, data });
-		working.full = '';
-		working.op = undefined;
-	} catch (err) {
-		working.full += raw;
-	}
-
-	decode(socket, callback);
-}
-
 class IPCTransport extends EventEmitter implements Transport {
 	private readonly client: RPCClient;
+
 	private socket: Socket | null;
 
 	public constructor(client: RPCClient) {
 		super();
 		this.client = client;
 		this.socket = null;
+	}
+
+	private async onPacket(data: Buffer): Promise<void> {
+		const op = data.readInt32LE(0);
+		const packetData = JSON.parse(data.subarray(8).toString()) as RPCResponsePayload;
+
+		switch (op) {
+			case OPCodes.Ping:
+				this.send(packetData!, OPCodes.Pong);
+				break;
+			case OPCodes.Frame:
+				if (!packetData) {
+					return;
+				}
+
+				this.emit('message', packetData);
+				break;
+			case OPCodes.Close:
+				this.emit('close', packetData);
+				break;
+			default:
+				break;
+		}
 	}
 
 	public async connect() {
@@ -126,64 +120,60 @@ class IPCTransport extends EventEmitter implements Transport {
 		socket.on('error', this.onClose.bind(this));
 		this.emit('open');
 		socket.write(
-			encode(OPCodes.HANDSHAKE, {
+			encode(OPCodes.Handshake, {
+				// eslint-disable-next-line id-length
 				v: 1,
 				client_id: this.client.clientId,
 			}),
 		);
 		socket.pause();
-		socket.on('readable', () => {
-			decode(socket, ({ op, data }) => {
-				switch (op) {
-					case OPCodes.PING:
-						this.send(data!, OPCodes.PONG);
-						break;
-					case OPCodes.FRAME:
-						if (!data) {
-							return;
-						}
 
-						if (data.cmd === RPCCommands.Authorize && data.evt !== RPCEvents.Error) {
-							findEndpoint()
-								.then((endpoint) => {
-									this.client.updateEndpoint(endpoint);
-								})
-								.catch((e) => {
-									// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-									this.client.emit(RPCEvents.Error, e);
-								});
-						}
-						this.emit('message', data);
-						break;
-					case OPCodes.CLOSE:
-						this.emit('close', data);
-						break;
-					default:
-						break;
-				}
-			});
-		});
+		let chunkedData: Buffer | null = Buffer.alloc(0);
+		let remainingBytes: number | null = 0;
+		const onData = (data: Buffer): void => {
+			if (!socket || socket.destroyed) return;
+
+			const wholeData = chunkedData ? Buffer.concat([chunkedData, data.subarray(0, remainingBytes!)]) : data;
+			const remainingData = remainingBytes ? data.subarray(remainingBytes) : null;
+
+			const length = wholeData.readUInt32LE(4);
+			const jsonData = wholeData.subarray(8);
+
+			remainingBytes = length - jsonData.length;
+
+			if (remainingBytes && remainingBytes > 0) {
+				chunkedData = wholeData;
+			} else {
+				chunkedData = null;
+				remainingBytes = null;
+			}
+
+			void this.onPacket(wholeData);
+			if (remainingData) onData(remainingData);
+		};
+
+		socket.on('data', onData);
 	}
 
 	public onClose(error: boolean) {
 		this.emit('close', error);
 	}
 
-	public send(data: RPCPayload | string, op = OPCodes.FRAME) {
+	public send(data: RPCPayload | string, op = OPCodes.Frame) {
 		this.socket!.write(encode(op, data));
 	}
 
 	public async close() {
-		return new Promise<void>((r) => {
-			this.once('close', r);
-			this.send({} as RPCPayload, OPCodes.CLOSE);
+		return new Promise<void>((resolve) => {
+			this.once('close', resolve);
+			this.send({} as RPCPayload, OPCodes.Close);
 			this.socket!.end();
 		});
 	}
 
 	public ping() {
-		this.send(uuid(), OPCodes.PING);
+		this.send(randomUUID(), OPCodes.Ping);
 	}
 }
 
-export { IPCTransport as default, encode, decode };
+export { IPCTransport as default, encode };

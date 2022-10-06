@@ -1,9 +1,7 @@
-import { RPCClient } from './client';
-import { register as registerUtil } from './util';
+import { register as registerUtil } from './util.js';
 
-export const Client = RPCClient;
-export const register = (id: string) =>
-	// eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call
-	registerUtil(`discord-${id}`);
-// @ts-expect-error
+export const register = (id: string) => registerUtil(`discord-${id}`);
+
 export const browser = typeof window !== 'undefined';
+
+export { RPCClient as Client } from './client.js';
