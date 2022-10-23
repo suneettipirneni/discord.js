@@ -90,29 +90,6 @@ class IPCTransport extends EventEmitter implements Transport {
 		this.socket = null;
 	}
 
-	private async onPacket(data: Buffer): Promise<void> {
-		const op = data.readInt32LE(0);
-		const packetData = JSON.parse(data.subarray(8).toString()) as RPCResponsePayload;
-
-		switch (op) {
-			case OPCodes.Ping:
-				this.send(packetData!, OPCodes.Pong);
-				break;
-			case OPCodes.Frame:
-				if (!packetData) {
-					return;
-				}
-
-				this.emit('message', packetData);
-				break;
-			case OPCodes.Close:
-				this.emit('close', packetData);
-				break;
-			default:
-				break;
-		}
-	}
-
 	public async connect() {
 		this.socket = await getIPC();
 		const socket = this.socket;
@@ -127,32 +104,40 @@ class IPCTransport extends EventEmitter implements Transport {
 			}),
 		);
 		socket.pause();
+		socket.on('readable', this.onReadable.bind(this));
+	}
 
-		let chunkedData: Buffer | null = Buffer.alloc(0);
-		let remainingBytes: number | null = 0;
-		const onData = (data: Buffer): void => {
-			if (!socket || socket.destroyed) return;
+	private async onReadable(): Promise<void> {
+		let data = this.socket?.read() as Buffer | undefined;
+		if (!data) return;
 
-			const wholeData = chunkedData ? Buffer.concat([chunkedData, data.subarray(0, remainingBytes!)]) : data;
-			const remainingData = remainingBytes ? data.subarray(remainingBytes) : null;
+		do {
+			const chunk = this.socket?.read() as Buffer | undefined;
+			if (!chunk) break;
+			data = Buffer.concat([data, chunk]);
+		} while (true);
 
-			const length = wholeData.readUInt32LE(4);
-			const jsonData = wholeData.subarray(8);
+		const op = data.readUInt32LE(0);
+		const length = data.readUInt32LE(4);
+		const parsedData = JSON.parse(data.subarray(8, length + 8).toString()) as RPCResponsePayload;
 
-			remainingBytes = length - jsonData.length;
+		switch (op) {
+			case OPCodes.Ping:
+				this.send(parsedData!, OPCodes.Pong);
+				break;
+			case OPCodes.Frame:
+				if (!parsedData) {
+					return;
+				}
 
-			if (remainingBytes && remainingBytes > 0) {
-				chunkedData = wholeData;
-			} else {
-				chunkedData = null;
-				remainingBytes = null;
-			}
-
-			void this.onPacket(wholeData);
-			if (remainingData) onData(remainingData);
-		};
-
-		socket.on('data', onData);
+				this.emit('message', parsedData);
+				break;
+			case OPCodes.Close:
+				this.emit('close', parsedData);
+				break;
+			default:
+				break;
+		}
 	}
 
 	public onClose(error: boolean) {
