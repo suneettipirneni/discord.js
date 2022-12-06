@@ -106,6 +106,7 @@ export enum RPCEvents {
 	VoiceStateCreate = 'VOICE_STATE_CREATE',
 	VoiceStateDelete = 'VOICE_STATE_DELETE',
 	VoiceStateUpdate = 'VOICE_STATE_UPDATE',
+	ThermalStateUpdate = 'THERMAL_STATE_UPDATE',
 }
 
 export enum VoiceConnectionStates {
