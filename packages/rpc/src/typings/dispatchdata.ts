@@ -45,6 +45,7 @@ export interface MappedRPCDispatchData {
 	[RPCEvents.EntitlementDelete]: undefined;
 	[RPCEvents.UserAchievementUpdate]: undefined;
 	[RPCEvents.VoiceChannelEffectToggleAnimationType]: undefined;
+	[RPCEvents.ThermalStateUpdate]: undefined;
 }
 
 export interface ReadyDispatchData {
