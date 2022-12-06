@@ -17,6 +17,7 @@ body:
         - builders
         - collection
         - rest
+        - rpc
         - proxy
         - proxy-container
         - voice

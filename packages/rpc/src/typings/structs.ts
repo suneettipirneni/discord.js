@@ -1,12 +1,12 @@
 import type { Snowflake, APIUser, RESTPostOAuth2ClientCredentialsResult } from 'discord.js';
-import type { KeyType, RelationshipType } from './types';
+import type { KeyType, RelationshipType, VoiceSettingsType } from './types';
 
 export interface RPCOAuthApplication {
 	description: string;
 	icon: string;
 	id: Snowflake;
-	rpc_origin: string[];
 	name: string;
+	rpc_origin: string[];
 }
 
 export interface Pan {
@@ -15,16 +15,16 @@ export interface Pan {
 }
 
 export interface SetUserVoiceSettingsData {
-	user_id: Snowflake;
-	pan?: Pan;
-	volume?: number;
 	mute?: boolean;
+	pan?: Pan;
+	user_id: Snowflake;
+	volume?: number;
 }
 
 export interface ShortcutKeyCombo {
-	type: KeyType;
 	code: number;
 	name: string;
+	type: KeyType;
 }
 
 export interface VoiceSettingDevice {
@@ -33,23 +33,23 @@ export interface VoiceSettingDevice {
 }
 
 export interface VoiceSettingsInput {
+	available_devices: VoiceSettingDevice[];
 	device_id: string;
 	volume: number;
-	available_devices: VoiceSettingDevice[];
 }
 
 export interface VoiceSettingsMode {
-	type: 'PUSH_TO_TALK' | 'VOICE_ACTIVITY';
 	auto_threshold: boolean;
-	threshold: number;
-	shortcut: ShortcutKeyCombo;
 	delay: number;
+	shortcut: ShortcutKeyCombo;
+	threshold: number;
+	type: VoiceSettingsType;
 }
 
 export interface VoiceSettingsOutput {
+	available_devices: VoiceSettingDevice[];
 	device_id: string;
 	volume: number;
-	available_devices: VoiceSettingDevice[];
 }
 
 export enum DeviceType {
@@ -69,30 +69,30 @@ export interface Model {
 }
 
 export interface BaseDevice {
-	type: DeviceType;
 	id: string;
-	vendor: Vendor;
 	model: Model;
 	related: string[];
+	type: DeviceType;
+	vendor: Vendor;
 }
 
 export interface OutputDevice extends BaseDevice {
-	type: DeviceType.VideoInput | DeviceType.AudioOutput;
+	type: DeviceType.AudioOutput | DeviceType.VideoInput;
 }
 
 export interface InputAudioDevice extends BaseDevice {
-	type: DeviceType.AudioInput;
-	echo_cancellation?: boolean;
-	noise_suppression?: boolean;
 	auto_gain_control?: boolean;
+	echo_cancellation?: boolean;
 	hardware_mute?: boolean;
+	noise_suppression?: boolean;
+	type: DeviceType.AudioInput;
 }
 
-export type Device = OutputDevice | InputAudioDevice;
+export type Device = InputAudioDevice | OutputDevice;
 
 export interface RPCServerConfiguration {
-	cdn_host: string;
 	api_endpoint: string;
+	cdn_host: string;
 	environment: string;
 }
 
