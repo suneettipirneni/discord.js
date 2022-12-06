@@ -191,6 +191,7 @@ export interface MappedRPCEventsArguments {
 	[RPCEvents.EntitlementDelete]: unknown;
 	[RPCEvents.UserAchievementUpdate]: unknown;
 	[RPCEvents.VoiceChannelEffectToggleAnimationType]: unknown;
+	[RPCEvents.ThermalStateUpdate]: unknown;
 }
 
 export interface GuildStatusArguments {
