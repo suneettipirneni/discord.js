@@ -46,3 +46,6 @@ packages:voice:
 packages:ws:
   - packages/ws/*
   - packages/ws/**/*
+packages/cache:
+  - packages:cache/*
+  - packages:cache/**/*
