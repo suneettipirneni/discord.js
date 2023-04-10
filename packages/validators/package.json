@@ -1,5 +1,5 @@
 {
-	"name": "@discordjs/{name}",
+	"name": "@discordjs/validators",
 	"version": "0.1.0",
 	"description": "",
 	"scripts": {
@@ -10,22 +10,28 @@
 		"format": "prettier --write . && cross-env TIMING=1 eslint src __tests__ --ext .mjs,.js,.ts --fix --format=pretty",
 		"docs": "yarn build:docs && api-extractor run --local",
 		"prepack": "yarn build && yarn lint",
-		"changelog": "git cliff --prepend ./CHANGELOG.md -u -c ./cliff.toml -r ../../ --include-path 'packages/{name}/*'",
+		"changelog": "git cliff --prepend ./CHANGELOG.md -u -c ./cliff.toml -r ../../ --include-path 'packages/validators/*'",
 		"release": "cliff-jumper"
 	},
-	"main": "./dist/index.js",
-	"module": "./dist/index.mjs",
-	"typings": "./dist/index.d.ts",
 	"exports": {
-		"import": "./dist/index.mjs",
-		"require": "./dist/index.js",
-		"types": "./dist/index.d.ts"
+		"./components/button": {
+			"import": "./dist/button.mjs",
+			"require": "./dist/button.js",
+			"types": "./dist/button.d.ts"
+		},
+		"./components/selectMenu": {
+			"import": "./dist/selectMenu.mjs",
+			"require": "./dist/selectMenu.js",
+			"types": "./dist/selectMenu.d.ts"
+		}
 	},
 	"directories": {
 		"lib": "src",
 		"test": "__tests__"
 	},
-	"files": ["dist"],
+	"files": [
+		"dist"
+	],
 	"contributors": [
 		"Crawl <icrawltogo@gmail.com>",
 		"SpaceEEC <spaceeec@yahoo.com>",
@@ -42,25 +48,28 @@
 		"url": "https://github.com/discordjs/discord.js/issues"
 	},
 	"homepage": "https://discord.js.org",
-	"dependencies": {},
 	"devDependencies": {
-		"@favware/cliff-jumper": "^2.0.0",
-		"@microsoft/api-extractor": "^7.34.4",
-		"@types/node": "16.18.12",
-		"@vitest/coverage-c8": "^0.29.8",
+		"@favware/cliff-jumper": "^1.10.0",
+		"@microsoft/api-extractor": "^7.33.7",
+		"@types/node": "16.18.11",
+		"@vitest/coverage-c8": "^0.29.7",
 		"cross-env": "^7.0.3",
-		"eslint": "^8.36.0",
-		"eslint-config-neon": "^0.1.41",
-		"eslint-formatter-pretty": "^5.0.0",
-		"prettier": "^2.8.7",
+		"eslint": "^8.31.0",
+		"eslint-config-neon": "^0.1.40",
+		"eslint-formatter-pretty": "^4.1.0",
+		"prettier": "^2.8.2",
 		"tsup": "^6.7.0",
 		"typescript": "^5.0.2",
-		"vitest": "^0.29.8"
+		"vitest": "^0.29.7"
 	},
 	"engines": {
 		"node": ">=16.9.0"
 	},
 	"publishConfig": {
 		"access": "public"
+	},
+	"dependencies": {
+		"@sapphire/shapeshift": "^3.8.1",
+		"discord-api-types": "^0.37.37"
 	}
 }

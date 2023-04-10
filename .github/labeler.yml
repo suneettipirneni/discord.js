@@ -19,15 +19,15 @@ packages:core:
 packages:discord.js:
   - packages/discord.js/*
   - packages/discord.js/**/*
-packages:next:
-  - packages/next/*
-  - packages/next/**/*
 packages:docgen:
   - packages/docgen/*
   - packages/docgen/**/*
 packages:formatters:
   - packages/formatters/*
   - packages/formatters/**/*
+packages:next:
+  - packages/next/*
+  - packages/next/**/*
 packages:proxy:
   - packages/proxy/*
   - packages/proxy/**/*
@@ -43,6 +43,9 @@ packages:ui:
 packages:util:
   - packages/util/*
   - packages/util/**/*
+packages:validators:
+  - packages/validators/*
+  - packages/validators/**/*
 packages:voice:
   - packages/voice/*
   - packages/voice/**/*

@@ -62,11 +62,11 @@
   color: fbca04
 - name: packages:discord.js
   color: fbca04
-- name: packages:next
-  color: fbca04
 - name: packages:docgen
   color: fbca04
 - name: packages:formatters
+  color: fbca04
+- name: packages:next
   color: fbca04
 - name: packages:proxy
   color: fbca04
@@ -77,6 +77,8 @@
 - name: packages:ui
   color: fbca04
 - name: packages:util
+  color: fbca04
+- name: packages:validators
   color: fbca04
 - name: packages:voice
   color: fbca04
