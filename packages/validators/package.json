@@ -23,6 +23,11 @@
 			"import": "./dist/selectMenu.mjs",
 			"require": "./dist/selectMenu.js",
 			"types": "./dist/selectMenu.d.ts"
+		},
+		"./messages/embed": {
+			"import": "./dist/embed.mjs",
+			"require": "./dist/embed.js",
+			"types": "./dist/embed.d.ts"
 		}
 	},
 	"directories": {
